@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Upload, FileSymlink } from 'lucide-react';
-import { importDocument } from '@/utils/editorUtils';
+import { importDocument } from '@/utils/documentImport';
 import { toast } from 'sonner';
 
 interface ImportModalProps {
