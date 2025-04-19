@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';

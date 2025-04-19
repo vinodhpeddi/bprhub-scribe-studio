@@ -11,13 +11,15 @@ interface FormatToolbarProps {
   activeFormats: string[];
   documentContent: string;
   documentTitle: string;
+  children?: React.ReactNode;
 }
 
 const FormatToolbar: React.FC<FormatToolbarProps> = ({ 
   onFormatClick, 
   activeFormats,
   documentContent,
-  documentTitle 
+  documentTitle,
+  children
 }) => {
   const [isSticky, setIsSticky] = useState(false);
 
@@ -91,6 +93,8 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
         label="Export as Word"
         onClick={() => handleExport('word')}
       />
+
+      {children}
     </div>
   );
 };
