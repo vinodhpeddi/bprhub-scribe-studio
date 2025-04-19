@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image, IndentIncrease, IndentDecrease, FileDown, Heading, Heading1, Heading2, Heading3 } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image, IndentIncrease, IndentDecrease, FileDown, Heading, Heading1, Heading2, Heading3, Highlighter, Pencil, CommentSquare } from 'lucide-react';
 import IconButton from './ui/IconButton';
 import { exportDocument } from '@/utils/documentExport';
 import { defaultExportOptions } from '@/utils/documentTypes';
@@ -61,13 +60,15 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
     { id: 'orderedList', icon: <ListOrdered size={18} />, label: 'Numbered List' },
     { id: 'indentList', icon: <IndentIncrease size={18} />, label: 'Increase Indent' },
     { id: 'outdentList', icon: <IndentDecrease size={18} />, label: 'Decrease Indent' },
+    { id: 'highlight', icon: <Highlighter size={18} />, label: 'Highlight' },
+    { id: 'redline', icon: <Pencil size={18} />, label: 'Redline' },
+    { id: 'comment', icon: <CommentSquare size={18} />, label: 'Add Comment' },
     { id: 'table', icon: <Table size={18} />, label: 'Insert Table' },
     { id: 'layoutTable', icon: <Table size={18} />, label: 'Layout Table' },
     { id: 'checklist', icon: <Check size={18} />, label: 'Checklist' },
     { id: 'image', icon: <Image size={18} />, label: 'Insert Image' },
   ];
 
-  // Available font families
   const fontFamilies = [
     { value: 'Arial, sans-serif', label: 'Arial' },
     { value: 'Times New Roman, serif', label: 'Times New Roman' },
@@ -77,7 +78,6 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
     { value: 'Tahoma, sans-serif', label: 'Tahoma' }
   ];
 
-  // Font sizes
   const fontSizes = [
     { value: '1', label: '8pt' },
     { value: '2', label: '10pt' },
@@ -94,7 +94,6 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
         isSticky ? 'sticky top-0 shadow-md animate-slide-in' : ''
       }`}
     >
-      {/* Heading Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 px-2 flex items-center">
@@ -118,7 +117,6 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Font Family Selector */}
       <Select onValueChange={(value) => onFormatClick('fontName', value)}>
         <SelectTrigger className="h-8 w-32">
           <SelectValue placeholder="Font" />
@@ -132,7 +130,6 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
         </SelectContent>
       </Select>
 
-      {/* Font Size Selector */}
       <Select onValueChange={(value) => onFormatClick('fontSize', value)}>
         <SelectTrigger className="h-8 w-20">
           <SelectValue placeholder="Size" />

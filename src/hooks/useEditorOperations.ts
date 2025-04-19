@@ -105,6 +105,30 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
       case 'orderedList':
         command = 'insertOrderedList';
         break;
+      case 'highlight':
+        document.execCommand('backColor', false, '#FEF7CD');
+        return;
+      case 'redline':
+        document.execCommand('foreColor', false, '#ea384c');
+        document.execCommand('strikeThrough', false, null);
+        return;
+      case 'comment':
+        const selection = window.getSelection();
+        if (selection && !selection.isCollapsed) {
+          const comment = prompt('Enter your comment:');
+          if (comment) {
+            const range = selection.getRangeAt(0);
+            const span = document.createElement('span');
+            span.className = 'comment';
+            span.title = comment;
+            span.style.backgroundColor = '#FEF7CD';
+            span.style.cursor = 'help';
+            range.surroundContents(span);
+          }
+        } else {
+          alert('Please select some text to comment on');
+        }
+        return;
       case 'formatBlock':
         command = 'formatBlock';
         commandValue = value;
