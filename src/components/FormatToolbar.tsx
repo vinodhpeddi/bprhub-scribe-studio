@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image } from 'lucide-react';
 import IconButton from './ui/IconButton';
@@ -30,7 +31,7 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({ onFormatClick, activeForm
     { id: 'bulletList', icon: <List size={18} />, label: 'Bullet List' },
     { id: 'orderedList', icon: <ListOrdered size={18} />, label: 'Numbered List' },
     { id: 'table', icon: <Table size={18} />, label: 'Insert Table' },
-    { id: 'layoutTable', icon: <TableRows size={18} />, label: 'Layout Table' },
+    { id: 'layoutTable', icon: <Table size={18} />, label: 'Layout Table' },
     { id: 'checklist', icon: <Check size={18} />, label: 'Checklist' },
     { id: 'image', icon: <Image size={18} />, label: 'Insert Image' },
   ];
