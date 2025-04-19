@@ -1,6 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import FormatToolbar from './FormatToolbar';
+import { TableProperties } from './TableProperties';
 
 interface TextEditorProps {
   initialContent: string;
@@ -12,12 +12,49 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
   const defaultEditorRef = useRef<HTMLDivElement>(null);
   const actualEditorRef = editorRef || defaultEditorRef;
   const [activeFormats, setActiveFormats] = useState<string[]>([]);
+  const [showTableProperties, setShowTableProperties] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
 
   useEffect(() => {
     if (actualEditorRef.current) {
       actualEditorRef.current.innerHTML = initialContent;
     }
   }, [initialContent, actualEditorRef]);
+
+  const insertTable = (isLayout: boolean = false) => {
+    const tableHtml = `
+      <table class="${isLayout ? 'layout-table' : ''}" style="${isLayout ? 'border-collapse: collapse; width: 100%;' : ''}">
+        <tr>
+          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
+          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
+          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
+        </tr>
+      </table><p></p>
+    `;
+    document.execCommand('insertHTML', false, tableHtml);
+  };
+
+  const insertChecklist = () => {
+    const checklistHtml = `
+      <ul style="list-style-type: none; padding-left: 0;">
+        <li><input type="checkbox" /> Checklist item 1</li>
+        <li><input type="checkbox" /> Checklist item 2</li>
+        <li><input type="checkbox" /> Checklist item 3</li>
+      </ul><p></p>
+    `;
+    document.execCommand('insertHTML', false, checklistHtml);
+  };
+
+  const insertImage = () => {
+    const url = prompt('Enter image URL:');
+    if (url) {
+      const imgHtml = `<img src="${url}" alt="Inserted image" style="max-width: 100%;" /><p></p>`;
+      document.execCommand('insertHTML', false, imgHtml);
+    }
+  };
 
   const handleFormatClick = (formatType: string) => {
     let command = '';
@@ -42,6 +79,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
       case 'table':
         insertTable();
         return;
+      case 'layoutTable':
+        insertTable(true);
+        return;
       case 'checklist':
         insertChecklist();
         return;
@@ -56,46 +96,16 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
     updateActiveFormats();
   };
 
-  const insertTable = () => {
-    const tableHtml = `
-      <table>
-        <tr>
-          <th>Header 1</th>
-          <th>Header 2</th>
-          <th>Header 3</th>
-        </tr>
-        <tr>
-          <td>Row 1, Cell 1</td>
-          <td>Row 1, Cell 2</td>
-          <td>Row 1, Cell 3</td>
-        </tr>
-        <tr>
-          <td>Row 2, Cell 1</td>
-          <td>Row 2, Cell 2</td>
-          <td>Row 2, Cell 3</td>
-        </tr>
-      </table><p></p>
-    `;
-    document.execCommand('insertHTML', false, tableHtml);
-  };
-
-  const insertChecklist = () => {
-    const checklistHtml = `
-      <ul style="list-style-type: none; padding-left: 0;">
-        <li><input type="checkbox" /> Checklist item 1</li>
-        <li><input type="checkbox" /> Checklist item 2</li>
-        <li><input type="checkbox" /> Checklist item 3</li>
-      </ul><p></p>
-    `;
-    document.execCommand('insertHTML', false, checklistHtml);
-  };
-
-  const insertImage = () => {
-    // In a real implementation, this would open a file dialog
-    const url = prompt('Enter image URL:');
-    if (url) {
-      const imgHtml = `<img src="${url}" alt="Inserted image" style="max-width: 100%;" /><p></p>`;
-      document.execCommand('insertHTML', false, imgHtml);
+  const handleTableClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const table = target.closest('table');
+    
+    if (table) {
+      setSelectedTable(table as HTMLTableElement);
+      setShowTableProperties(true);
+    } else {
+      setSelectedTable(null);
+      setShowTableProperties(false);
     }
   };
 
@@ -113,7 +123,6 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
     if (document.queryCommandState('italic')) formats.push('italic');
     if (document.queryCommandState('underline')) formats.push('underline');
     
-    // List checks are more complex
     if (document.queryCommandState('insertUnorderedList')) formats.push('bulletList');
     if (document.queryCommandState('insertOrderedList')) formats.push('orderedList');
     
@@ -121,19 +130,23 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    // Prevent the default paste
     e.preventDefault();
     
-    // Get text representation
     const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text');
     
-    // Insert as HTML to preserve formatting
     document.execCommand('insertHTML', false, text);
   };
 
   return (
     <div className="w-full">
       <FormatToolbar onFormatClick={handleFormatClick} activeFormats={activeFormats} />
+      
+      {showTableProperties && selectedTable && (
+        <TableProperties 
+          table={selectedTable}
+          onClose={() => setShowTableProperties(false)}
+        />
+      )}
       
       <div
         ref={actualEditorRef}
@@ -144,6 +157,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
         onKeyUp={updateActiveFormats}
         onMouseUp={updateActiveFormats}
         onFocus={updateActiveFormats}
+        onClick={handleTableClick}
       />
     </div>
   );
