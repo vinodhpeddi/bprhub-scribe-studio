@@ -1,5 +1,24 @@
 import React, { useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image, IndentIncrease, IndentDecrease, FileDown, Heading, Heading1, Heading2, Heading3, Highlighter, Pencil, CommentSquare } from 'lucide-react';
+import { 
+  Bold, 
+  Italic, 
+  Underline, 
+  List, 
+  ListOrdered, 
+  Table, 
+  Check, 
+  Image, 
+  IndentIncrease, 
+  IndentDecrease, 
+  FileDown, 
+  Heading, 
+  Heading1, 
+  Heading2, 
+  Heading3, 
+  Highlighter, 
+  Pencil, 
+  MessageSquare 
+} from 'lucide-react';
 import IconButton from './ui/IconButton';
 import { exportDocument } from '@/utils/documentExport';
 import { defaultExportOptions } from '@/utils/documentTypes';
@@ -62,7 +81,7 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
     { id: 'outdentList', icon: <IndentDecrease size={18} />, label: 'Decrease Indent' },
     { id: 'highlight', icon: <Highlighter size={18} />, label: 'Highlight' },
     { id: 'redline', icon: <Pencil size={18} />, label: 'Redline' },
-    { id: 'comment', icon: <CommentSquare size={18} />, label: 'Add Comment' },
+    { id: 'comment', icon: <MessageSquare size={18} />, label: 'Add Comment' },
     { id: 'table', icon: <Table size={18} />, label: 'Insert Table' },
     { id: 'layoutTable', icon: <Table size={18} />, label: 'Layout Table' },
     { id: 'checklist', icon: <Check size={18} />, label: 'Checklist' },
