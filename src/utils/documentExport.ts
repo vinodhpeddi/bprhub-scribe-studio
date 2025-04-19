@@ -1,4 +1,3 @@
-
 import { saveAs } from 'file-saver';
 import { ExportOptions } from './documentTypes';
 import { validateDocument } from './documentAnalysis';
@@ -6,14 +5,18 @@ import { initPdfWorker, validatePdfWorker } from './pdfWorker';
 import { htmlToPdf } from './exporters/pdfExporter';
 import { htmlToDocx } from './exporters/wordExporter';
 import { htmlToStandaloneHtml } from './exporters/htmlExporter';
+import { replaceMergeFields } from './mergeFields';
 
 // Initialize PDF.js worker
 initPdfWorker();
 
 export async function exportDocument(content: string, options: ExportOptions, title: string = "Document"): Promise<void> {
   try {
+    // Replace merge fields with sample values before export
+    const processedContent = replaceMergeFields(content);
+    
     // Validate document before export
-    const validation = validateDocument(title, content);
+    const validation = validateDocument(title, processedContent);
     if (!validation.isValid) {
       throw new Error(`Cannot export document: ${validation.errors.join(', ')}`);
     }
@@ -32,17 +35,17 @@ export async function exportDocument(content: string, options: ExportOptions, ti
           throw new Error('PDF.js worker failed to initialize properly. PDF export is unavailable.');
         }
         
-        blob = await htmlToPdf(content, options, title);
+        blob = await htmlToPdf(processedContent, options, title);
         filename = `${safeTitle}.pdf`;
         break;
         
       case 'word':
-        blob = await htmlToDocx(content, options, title);
+        blob = await htmlToDocx(processedContent, options, title);
         filename = `${safeTitle}.docx`;
         break;
         
       case 'html':
-        blob = htmlToStandaloneHtml(content, options, title);
+        blob = htmlToStandaloneHtml(processedContent, options, title);
         filename = `${safeTitle}.html`;
         break;
         

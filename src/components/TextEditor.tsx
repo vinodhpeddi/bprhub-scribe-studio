@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -6,6 +5,8 @@ import EditorContent from './editor/EditorContent';
 import { useEditorOperations } from '../hooks/useEditorOperations';
 import { importDocument } from '@/utils/documentImport';
 import { toast } from 'sonner';
+import MergeFieldsDropdown from './MergeFieldsDropdown';
+import { replaceMergeFields } from '@/utils/mergeFields';
 
 interface TextEditorProps {
   initialContent: string;
@@ -76,6 +77,15 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
     }
   };
 
+  const handleInsertMergeField = (field: string) => {
+    document.execCommand('insertHTML', false, field);
+    if (actualEditorRef.current) {
+      const newContent = actualEditorRef.current.innerHTML;
+      setContent(newContent);
+      onChange(newContent);
+    }
+  };
+
   return (
     <div className="w-full">
       <FormatToolbar 
@@ -83,7 +93,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
         activeFormats={activeFormats}
         documentContent={content}
         documentTitle="Document"
-      />
+      >
+        <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
+      </FormatToolbar>
       
       {showTableProperties && selectedTable && (
         <TableProperties 
