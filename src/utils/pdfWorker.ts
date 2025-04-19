@@ -5,17 +5,19 @@ import * as pdfjs from 'pdfjs-dist';
 export function initPdfWorker() {
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     try {
-      // Get the version of pdfjs-dist that's installed
-      const version = pdfjs.version || '3.11.174';
+      // Instead of using CDN links which are failing, we'll use the fake worker
+      // This is more reliable for development environments where CDN access might be restricted
+      pdfjs.GlobalWorkerOptions.workerPort = new Worker(
+        new URL('pdfjs-dist/build/pdf.worker.js', import.meta.url)
+      );
       
-      // Set the worker source - try unpkg as primary CDN and cdnjs as fallback
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`;
-      
-      console.log(`PDF.js worker initialized with version ${version}`);
+      console.log('PDF.js worker initialized with local worker');
     } catch (error) {
       console.error('Error initializing PDF.js worker:', error);
-      // Final fallback to a known working version if everything else fails
-      pdfjs.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
+      
+      // Fall back to using the fake worker as a last resort
+      (window as any).pdfjsWorker = {};
+      console.warn('Using PDF.js fake worker as fallback');
     }
   }
 }
@@ -23,13 +25,21 @@ export function initPdfWorker() {
 // Helper function to validate if the worker is properly loaded
 export async function validatePdfWorker(): Promise<boolean> {
   try {
-    // Create a simple 1x1 PDF to test if the worker is functioning
-    const uint8Array = new Uint8Array([
-      /* Minimal valid PDF content - don't process, just check worker availability */
+    // Create a simple test to verify PDF.js functionality
+    const testData = new Uint8Array([
+      0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, // %PDF-1.7 header
+      0x0a, 0x31, 0x20, 0x30, 0x20, 0x6f, 0x62, 0x6a, // Basic PDF structure
+      0x3c, 0x3c, 0x2f, 0x54, 0x79, 0x70, 0x65, 0x2f, 
+      0x43, 0x61, 0x74, 0x61, 0x6c, 0x6f, 0x67, 0x3e,
+      0x3e, 0x0a, 0x65, 0x6e, 0x64, 0x6f, 0x62, 0x6a,
+      0x0a, 0x74, 0x72, 0x61, 0x69, 0x6c, 0x65, 0x72,
+      0x3c, 0x3c, 0x2f, 0x52, 0x6f, 0x6f, 0x74, 0x20,
+      0x31, 0x20, 0x30, 0x20, 0x52, 0x3e, 0x3e, 0x0a,
+      0x25, 0x25, 0x45, 0x4f, 0x46 // %%EOF
     ]);
     
-    // Just check if worker is available without fully loading PDF
-    await pdfjs.getDocument({ data: uint8Array }).promise.catch(() => {});
+    const loadingTask = pdfjs.getDocument({ data: testData });
+    await loadingTask.promise;
     return true;
   } catch (error) {
     console.error('PDF.js worker validation failed:', error);
