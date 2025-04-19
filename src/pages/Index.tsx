@@ -1,165 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import EditorHeader from '@/components/EditorHeader';
 import TextEditor from '@/components/TextEditor';
 import DocumentOutline from '@/components/DocumentOutline';
-import TemplateSelector from '@/components/TemplateSelector';
 import ImportModal from '@/components/ImportModal';
 import DocumentListModal from '@/components/DocumentListModal';
-import { 
-  templates, 
-  DocumentTemplate, 
-  UserDocument, 
-  createNewDraft,
-  saveDocument,
-  getAllDocuments,
-  finalizeDraft
-} from '@/utils/editorUtils';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
-import { toast } from 'sonner';
+import { useDocument } from '@/hooks/useDocument';
+import { initPdfWorker } from '@/utils/pdfWorker';
+
+// Initialize PDF.js worker
+initPdfWorker();
 
 const Index = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [documentTitle, setDocumentTitle] = useState('Untitled Document');
-  const [documentContent, setDocumentContent] = useState('');
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const {
+    documentTitle,
+    setDocumentTitle,
+    documentContent,
+    setDocumentContent,
+    currentDocument,
+    handleSaveDocument,
+    handleFinalizeDocument,
+    handleDocumentSelect
+  } = useDocument();
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
-  const [currentDocument, setCurrentDocument] = useState<UserDocument | null>(null);
-
-  useEffect(() => {
-    const existingDoc = location.state?.document;
-    
-    if (existingDoc) {
-      handleDocumentSelect(existingDoc);
-    } else {
-      setIsTemplateModalOpen(true);
-    }
-  }, [location.state]);
-
-  const handleSelectTemplate = (template: DocumentTemplate) => {
-    setSelectedTemplate(template);
-    setDocumentContent(template.initialContent);
-    
-    const newDraft = createNewDraft(template, 'Untitled Document');
-    setCurrentDocument(newDraft);
-    setDocumentTitle(newDraft.title);
-    
-    setIsTemplateModalOpen(false);
-  };
-
-  const handleSaveDocument = () => {
-    if (!currentDocument) {
-      toast.error('No active document to save');
-      return;
-    }
-    
-    const updatedDoc: UserDocument = {
-      ...currentDocument,
-      title: documentTitle,
-      content: documentContent,
-      lastModified: new Date().toISOString()
-    };
-    
-    try {
-      saveDocument(updatedDoc);
-      setCurrentDocument(updatedDoc);
-      toast.success('Document saved successfully');
-    } catch (error) {
-      console.error('Error saving document:', error);
-      toast.error('Failed to save document');
-    }
-  };
-
-  const handleFinalizeDocument = () => {
-    if (!currentDocument) {
-      toast.error('No active document to finalize');
-      return;
-    }
-    
-    if (!currentDocument.isDraft) {
-      toast.info('Document is already finalized');
-      return;
-    }
-    
-    const finalizedDoc = finalizeDraft(currentDocument);
-    
-    try {
-      saveDocument(finalizedDoc);
-      setCurrentDocument(finalizedDoc);
-      toast.success('Document finalized');
-    } catch (error) {
-      console.error('Error finalizing document:', error);
-      toast.error('Failed to finalize document');
-    }
-  };
 
   const handleImportComplete = (content: string) => {
     setDocumentContent(content);
-    
-    const blankTemplate = templates.find(t => t.id === 'blank') || templates[0];
-    const importDraft = createNewDraft(blankTemplate, 'Imported Document');
-    importDraft.content = content;
-    
-    setCurrentDocument(importDraft);
-    setDocumentTitle(importDraft.title);
-    
-    setIsImportModalOpen(false);
   };
-
-  const handleDocumentSelect = (document: UserDocument) => {
-    setCurrentDocument(document);
-    setDocumentTitle(document.title);
-    setDocumentContent(document.content);
-    
-    const template = templates.find(t => t.id === document.template) || templates[0];
-    setSelectedTemplate(template);
-  };
-
-  useEffect(() => {
-    const docs = getAllDocuments();
-    
-    if (docs.length > 0 && !currentDocument) {
-      const latestDoc = docs.reduce((latest, doc) => {
-        return new Date(doc.lastModified) > new Date(latest.lastModified) ? doc : latest;
-      }, docs[0]);
-      
-      const shouldContinue = window.confirm(`Continue with "${latestDoc.title}"?`);
-      
-      if (shouldContinue) {
-        handleDocumentSelect(latestDoc);
-        setIsTemplateModalOpen(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const autoSaveInterval = setInterval(() => {
-      if (currentDocument && documentContent) {
-        if (documentContent !== currentDocument.content || documentTitle !== currentDocument.title) {
-          const updatedDoc: UserDocument = {
-            ...currentDocument,
-            title: documentTitle,
-            content: documentContent,
-            lastModified: new Date().toISOString()
-          };
-          
-          try {
-            saveDocument(updatedDoc);
-            setCurrentDocument(updatedDoc);
-            console.log('Auto-saved document');
-          } catch (error) {
-            console.error('Error auto-saving document:', error);
-          }
-        }
-      }
-    }, 30000);
-    
-    return () => clearInterval(autoSaveInterval);
-  }, [currentDocument, documentContent, documentTitle]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -220,25 +92,6 @@ const Index = () => {
           </div>
         </div>
       </main>
-      
-      <TemplateSelector
-        isOpen={isTemplateModalOpen}
-        onClose={() => {
-          setIsTemplateModalOpen(false);
-          if (!currentDocument) {
-            navigate('/');
-          }
-        }}
-        onSelectTemplate={handleSelectTemplate}
-        onShowImport={() => {
-          setIsTemplateModalOpen(false);
-          setIsImportModalOpen(true);
-        }}
-        onShowDocuments={() => {
-          setIsTemplateModalOpen(false);
-          setIsDocListModalOpen(true);
-        }}
-      />
       
       <ImportModal
         isOpen={isImportModalOpen}

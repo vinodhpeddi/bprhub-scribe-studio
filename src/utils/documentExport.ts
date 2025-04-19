@@ -1,4 +1,3 @@
-
 import { saveAs } from 'file-saver';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType } from 'docx';
 import * as pdfLib from 'pdf-lib';
@@ -7,6 +6,10 @@ import { generateTableOfContents } from './documentAnalysis';
 import { validateDocument } from './documentAnalysis';
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import { initPdfWorker } from './pdfWorker';
+
+// Initialize PDF.js worker
+initPdfWorker();
 
 // Set worker path for PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
