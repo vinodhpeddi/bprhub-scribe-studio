@@ -14,6 +14,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
   const [activeFormats, setActiveFormats] = useState<string[]>([]);
   const [showTableProperties, setShowTableProperties] = useState(false);
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
+  const [content, setContent] = useState(initialContent);
 
   useEffect(() => {
     if (actualEditorRef.current) {
@@ -157,7 +158,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
   const handleEditorInput = () => {
     if (actualEditorRef.current) {
       updateActiveFormats();
-      onChange(actualEditorRef.current.innerHTML);
+      const newContent = actualEditorRef.current.innerHTML;
+      setContent(newContent);
+      onChange(newContent);
     }
   };
 
@@ -191,7 +194,12 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
 
   return (
     <div className="w-full">
-      <FormatToolbar onFormatClick={handleFormatClick} activeFormats={activeFormats} />
+      <FormatToolbar 
+        onFormatClick={handleFormatClick} 
+        activeFormats={activeFormats} 
+        documentContent={content}
+        documentTitle="Document"
+      />
       
       {showTableProperties && selectedTable && (
         <TableProperties 
