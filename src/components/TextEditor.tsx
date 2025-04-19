@@ -1,6 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
+import EditorContent from './editor/EditorContent';
+import { useEditorOperations } from '../hooks/useEditorOperations';
+import { importDocument } from '@/utils/documentImport';
+import { toast } from 'sonner';
 
 interface TextEditorProps {
   initialContent: string;
@@ -15,6 +20,8 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
   const [showTableProperties, setShowTableProperties] = useState(false);
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
   const [content, setContent] = useState(initialContent);
+  
+  const operations = useEditorOperations(onChange);
 
   useEffect(() => {
     if (actualEditorRef.current) {
@@ -22,124 +29,16 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
     }
   }, [initialContent, actualEditorRef]);
 
-  const insertTable = (isLayout: boolean = false) => {
-    const tableHtml = `
-      <table class="${isLayout ? 'layout-table' : ''}" style="${isLayout ? 'border-collapse: collapse; width: 100%;' : ''}">
-        <tr>
-          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
-          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
-        </tr>
-        <tr>
-          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
-          <td style="${isLayout ? 'border: none; padding: 8px;' : ''}">&nbsp;</td>
-        </tr>
-      </table><p></p>
-    `;
-    document.execCommand('insertHTML', false, tableHtml);
-  };
-
-  const insertChecklist = () => {
-    const checklistHtml = `
-      <ul style="list-style-type: none; padding-left: 0;">
-        <li><input type="checkbox" /> Checklist item 1</li>
-        <li><input type="checkbox" /> Checklist item 2</li>
-        <li><input type="checkbox" /> Checklist item 3</li>
-      </ul><p></p>
-    `;
-    document.execCommand('insertHTML', false, checklistHtml);
-  };
-
-  const insertImage = () => {
-    const url = prompt('Enter image URL:');
-    if (url) {
-      const imgHtml = `<img src="${url}" alt="Inserted image" style="max-width: 100%;" /><p></p>`;
-      document.execCommand('insertHTML', false, imgHtml);
-    }
-  };
-
-  const handleListIndent = (increase: boolean) => {
-    const selection = window.getSelection();
-    if (!selection) return;
+  const updateActiveFormats = () => {
+    const formats: string[] = [];
     
-    const listItem = selection.anchorNode?.parentElement?.closest('li');
-    if (!listItem) return;
+    if (document.queryCommandState('bold')) formats.push('bold');
+    if (document.queryCommandState('italic')) formats.push('italic');
+    if (document.queryCommandState('underline')) formats.push('underline');
+    if (document.queryCommandState('insertUnorderedList')) formats.push('bulletList');
+    if (document.queryCommandState('insertOrderedList')) formats.push('orderedList');
     
-    const list = listItem.closest('ol, ul');
-    if (!list) return;
-
-    if (increase) {
-      const previousSibling = listItem.previousElementSibling;
-      if (!previousSibling) return;
-
-      let subList = previousSibling.querySelector('ol, ul');
-      if (!subList) {
-        subList = document.createElement(list.tagName);
-        previousSibling.appendChild(subList);
-      }
-      subList.appendChild(listItem);
-    } else {
-      const parentList = list.parentElement?.closest('ol, ul');
-      if (!parentList) return;
-
-      const parentItem = list.parentElement;
-      if (!parentItem) return;
-
-      parentList.insertBefore(listItem, parentItem.nextSibling);
-      if (list.children.length === 0) {
-        list.remove();
-      }
-    }
-
-    updateActiveFormats();
-    if (actualEditorRef.current) {
-      onChange(actualEditorRef.current.innerHTML);
-    }
-  };
-
-  const handleFormatClick = (formatType: string) => {
-    let command = '';
-    let value = null;
-
-    switch (formatType) {
-      case 'bold':
-        command = 'bold';
-        break;
-      case 'italic':
-        command = 'italic';
-        break;
-      case 'underline':
-        command = 'underline';
-        break;
-      case 'bulletList':
-        command = 'insertUnorderedList';
-        break;
-      case 'orderedList':
-        command = 'insertOrderedList';
-        break;
-      case 'table':
-        insertTable();
-        return;
-      case 'layoutTable':
-        insertTable(true);
-        return;
-      case 'checklist':
-        insertChecklist();
-        return;
-      case 'image':
-        insertImage();
-        return;
-      case 'indentList':
-        handleListIndent(true);
-        return;
-      case 'outdentList':
-        handleListIndent(false);
-        return;
-      default:
-        return;
-    }
-
-    document.execCommand(command, false, value);
-    updateActiveFormats();
+    setActiveFormats(formats);
   };
 
   const handleTableClick = (e: React.MouseEvent) => {
@@ -164,39 +63,24 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
     }
   };
 
-  const updateActiveFormats = () => {
-    const formats: string[] = [];
-    
-    if (document.queryCommandState('bold')) formats.push('bold');
-    if (document.queryCommandState('italic')) formats.push('italic');
-    if (document.queryCommandState('underline')) formats.push('underline');
-    
-    if (document.queryCommandState('insertUnorderedList')) formats.push('bulletList');
-    if (document.queryCommandState('insertOrderedList')) formats.push('orderedList');
-    
-    setActiveFormats(formats);
-  };
-
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    
     const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text');
-    
     document.execCommand('insertHTML', false, text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {
       e.preventDefault();
-      handleListIndent(!e.shiftKey);
+      operations.handleListIndent(!e.shiftKey);
     }
   };
 
   return (
     <div className="w-full">
       <FormatToolbar 
-        onFormatClick={handleFormatClick} 
-        activeFormats={activeFormats} 
+        onFormatClick={operations.handleFormatClick} 
+        activeFormats={activeFormats}
         documentContent={content}
         documentTitle="Document"
       />
@@ -208,10 +92,8 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
         />
       )}
       
-      <div
-        ref={actualEditorRef}
-        className="editor-content"
-        contentEditable
+      <EditorContent
+        editorRef={actualEditorRef}
         onInput={handleEditorInput}
         onPaste={handlePaste}
         onKeyUp={updateActiveFormats}
