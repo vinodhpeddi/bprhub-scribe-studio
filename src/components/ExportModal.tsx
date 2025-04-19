@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { ExportOptions, defaultExportOptions, exportDocument } from '@/utils/editorUtils';
+import { ExportOptions, defaultExportOptions, exportDocument, validateDocument } from '@/utils/editorUtils';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -19,9 +20,18 @@ interface ExportModalProps {
 const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentContent, documentTitle }) => {
   const [options, setOptions] = useState<ExportOptions>(defaultExportOptions);
   const [isExporting, setIsExporting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleExport = async () => {
     try {
+      // Validate document before export
+      const validation = validateDocument(documentTitle, documentContent);
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors);
+        return;
+      }
+
+      setValidationErrors([]);
       setIsExporting(true);
       await exportDocument(documentContent, options, documentTitle);
       toast.success(`Document exported as ${options.format.toUpperCase()}`);
@@ -43,6 +53,19 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
             Choose your export options
           </DialogDescription>
         </DialogHeader>
+        
+        {validationErrors.length > 0 && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              <ul className="list-disc pl-4">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
         
         <div className="grid gap-6 py-4">
           <div className="space-y-2">
@@ -107,6 +130,15 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
                 id="compress"
                 checked={options.compressImages}
                 onCheckedChange={(checked) => setOptions({ ...options, compressImages: checked })}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="watermark" className="cursor-pointer">Add "DRAFT - DO NOT USE" Watermark</Label>
+              <Switch
+                id="watermark"
+                checked={options.addWatermark}
+                onCheckedChange={(checked) => setOptions({ ...options, addWatermark: checked })}
               />
             </div>
           </div>
