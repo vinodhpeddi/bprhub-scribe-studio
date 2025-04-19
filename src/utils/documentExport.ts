@@ -1,5 +1,6 @@
+
 import { saveAs } from 'file-saver';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType, IPropertiesOptions } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType } from 'docx';
 import * as pdfLib from 'pdf-lib';
 import { ExportOptions } from './documentTypes';
 import { generateTableOfContents } from './documentAnalysis';
@@ -98,46 +99,8 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
   
-  // Define paragraph styles
-  const paragraphStyles = [
-    {
-      id: "Heading1",
-      name: "Heading 1",
-      basedOn: "Normal",
-      next: "Normal",
-      quickFormat: true,
-      run: {
-        size: 36,
-        bold: true,
-        color: "000000",
-      },
-      paragraph: {
-        spacing: {
-          after: 200,
-        },
-      },
-    },
-    {
-      id: "Heading2",
-      name: "Heading 2",
-      basedOn: "Normal",
-      next: "Normal",
-      quickFormat: true,
-      run: {
-        size: 30,
-        bold: true,
-        color: "000000",
-      },
-      paragraph: {
-        spacing: {
-          after: 120,
-        },
-      },
-    },
-  ];
-  
-  // Generate children recursively from HTML
-  const sections = [];
+  // Generate sections from HTML
+  let sections = [];
   
   // Add watermark if requested
   if (options.addWatermark) {
@@ -152,13 +115,6 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
           }),
         ],
         alignment: "center",
-        style: {
-          paragraph: {
-            spacing: {
-              after: 0,
-            },
-          },
-        },
       })
     );
   }
@@ -186,7 +142,7 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
     });
   }
   
-  // Process the HTML content
+  // Process HTML content
   const elements = Array.from(doc.body.children);
   elements.forEach(element => {
     if (element.tagName.toLowerCase().startsWith('h')) {
@@ -252,32 +208,18 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
     }
   });
 
-  // Create a document with all the content and styles defined inline
+  // Create document with all content
   const docWithContent = new Document({
     title: title,
     description: "Document created with BPRHub Scribe Studio",
     sections: [
       {
         properties: {
-          page: {
-            size: {
-              width: options.paperSize === 'a4' ? 11906 : options.paperSize === 'letter' ? 12240 : 14040,
-              height: options.paperSize === 'a4' ? 16838 : options.paperSize === 'letter' ? 15840 : 22860,
-            },
-          },
+          type: SectionType.CONTINUOUS,
         },
-        children: [
-          new Paragraph({
-            text: title,
-            heading: HeadingLevel.TITLE,
-          }),
-          ...sections
-        ],
+        children: sections
       }
-    ],
-    styles: {
-      paragraphStyles: paragraphStyles
-    }
+    ]
   });
 
   // Generate the document blob
