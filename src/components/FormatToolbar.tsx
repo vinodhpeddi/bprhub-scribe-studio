@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image, TableRows } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image } from 'lucide-react';
 import IconButton from './ui/IconButton';
 
 interface FormatToolbarProps {

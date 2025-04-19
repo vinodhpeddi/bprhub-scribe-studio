@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from './ui/button';
-import { TableRows, TableColumns } from 'lucide-react';
+import { Table, TableIcon } from 'lucide-react';
 
 interface TablePropertiesProps {
   table: HTMLTableElement;
@@ -45,7 +44,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({ table, onClose
         onClick={insertRow}
         className="flex items-center gap-1"
       >
-        <TableRows size={16} />
+        <TableIcon size={16} />
         Add Row
       </Button>
       
@@ -55,7 +54,7 @@ export const TableProperties: React.FC<TablePropertiesProps> = ({ table, onClose
         onClick={insertColumn}
         className="flex items-center gap-1"
       >
-        <TableColumns size={16} />
+        <TableIcon size={16} />
         Add Column
       </Button>
       
