@@ -1,4 +1,3 @@
-
 import { saveAs } from 'file-saver';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle } from 'docx';
 import * as pdfLib from 'pdf-lib';
@@ -116,7 +115,6 @@ export function countElements(content: string): {
   };
 }
 
-// Generate TOC for PDF and Word exports
 export function generateTableOfContents(content: string): string {
   const outline = parseDocumentOutline(content);
   let tocHtml = '<h2>Table of Contents</h2>';
@@ -129,7 +127,6 @@ export function generateTableOfContents(content: string): string {
   return tocHtml;
 }
 
-// Convert HTML to docx format
 async function htmlToDocx(content: string, options: ExportOptions, title: string): Promise<Blob> {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
@@ -292,11 +289,7 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
   return await Packer.toBlob(docx);
 }
 
-// Convert HTML to PDF using pdf-lib
 async function htmlToPdf(content: string, options: ExportOptions, title: string): Promise<Blob> {
-  // For a production app, you would typically use a server-side solution or a more robust client-side library
-  // This is a simplified version that creates a basic PDF
-  
   const pdfDoc = await pdfLib.PDFDocument.create();
   const page = pdfDoc.addPage(options.paperSize === 'a4' 
     ? [595.28, 841.89] // A4 dimensions in points
@@ -416,7 +409,6 @@ async function htmlToPdf(content: string, options: ExportOptions, title: string)
   return new Blob([pdfBytes], { type: 'application/pdf' });
 }
 
-// Export document to requested format
 export async function exportDocument(content: string, options: ExportOptions, title: string = "Document"): Promise<void> {
   try {
     let blob: Blob;
@@ -478,14 +470,12 @@ export async function exportDocument(content: string, options: ExportOptions, ti
   }
 }
 
-// Import document from file
 export async function importDocument(file: File): Promise<string> {
   try {
     const fileType = file.type;
     let content = '';
     
     if (fileType === 'application/pdf') {
-      // For PDF import (simplified - would need a more robust solution in production)
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjs.getDocument(arrayBuffer).promise;
       
@@ -496,29 +486,23 @@ export async function importDocument(file: File): Promise<string> {
         textContent += text.items.map((item: any) => item.str).join(' ') + '\n\n';
       }
       
-      // Convert plain text to HTML (very basic)
-      const paragraphs = textContent.split('\n\n').filter(p => p.trim());
       content = `<h1>${file.name.replace('.pdf', '')}</h1>` + 
-        paragraphs.map(p => `<p>${p}</p>`).join('');
+        textContent.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
         
     } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
                fileType === 'application/msword') {
-      // For Word import using mammoth.js
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.convertToHtml({ arrayBuffer });
       content = result.value;
       
     } else if (fileType === 'text/html' || fileType === 'application/xhtml+xml') {
-      // For HTML import
       const text = await file.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(text, 'text/html');
       
-      // Extract just the body content
       content = doc.body.innerHTML;
       
     } else if (fileType === 'text/plain') {
-      // For plain text import
       const text = await file.text();
       const paragraphs = text.split('\n\n').filter(p => p.trim());
       content = `<h1>${file.name.replace('.txt', '')}</h1>` + 
@@ -535,25 +519,19 @@ export async function importDocument(file: File): Promise<string> {
   }
 }
 
-// Save document to localStorage
 export function saveDocument(document: UserDocument): void {
   try {
-    // Get existing documents
     const storedDocs = localStorage.getItem('userDocuments');
     const docs: UserDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
     
-    // Check if document already exists
     const existingIndex = docs.findIndex(doc => doc.id === document.id);
     
     if (existingIndex >= 0) {
-      // Update existing document
       docs[existingIndex] = document;
     } else {
-      // Add new document
       docs.push(document);
     }
     
-    // Save to localStorage
     localStorage.setItem('userDocuments', JSON.stringify(docs));
   } catch (error) {
     console.error('Error saving document:', error);
@@ -561,7 +539,6 @@ export function saveDocument(document: UserDocument): void {
   }
 }
 
-// Get all documents from localStorage
 export function getAllDocuments(): UserDocument[] {
   try {
     const storedDocs = localStorage.getItem('userDocuments');
@@ -572,7 +549,6 @@ export function getAllDocuments(): UserDocument[] {
   }
 }
 
-// Get a single document by ID
 export function getDocumentById(id: string): UserDocument | null {
   try {
     const docs = getAllDocuments();
@@ -583,7 +559,6 @@ export function getDocumentById(id: string): UserDocument | null {
   }
 }
 
-// Delete a document by ID
 export function deleteDocument(id: string): void {
   try {
     const docs = getAllDocuments();
@@ -595,7 +570,6 @@ export function deleteDocument(id: string): void {
   }
 }
 
-// Create a new document draft
 export function createNewDraft(template: DocumentTemplate, title: string = 'Untitled Document'): UserDocument {
   const now = new Date().toISOString();
   return {
@@ -609,7 +583,6 @@ export function createNewDraft(template: DocumentTemplate, title: string = 'Unti
   };
 }
 
-// Convert draft to final document
 export function finalizeDraft(document: UserDocument): UserDocument {
   return {
     ...document,
