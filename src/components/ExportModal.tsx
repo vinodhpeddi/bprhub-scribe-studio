@@ -6,19 +6,32 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { ExportOptions, defaultExportOptions, exportDocument } from '@/utils/editorUtils';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   documentContent: string;
+  documentTitle: string;
 }
 
-const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentContent }) => {
+const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentContent, documentTitle }) => {
   const [options, setOptions] = useState<ExportOptions>(defaultExportOptions);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = () => {
-    exportDocument(documentContent, options);
-    onClose();
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await exportDocument(documentContent, options, documentTitle);
+      toast.success(`Document exported as ${options.format.toUpperCase()}`);
+      onClose();
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export document');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -100,8 +113,17 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleExport}>Export Document</Button>
+          <Button variant="outline" onClick={onClose} disabled={isExporting}>Cancel</Button>
+          <Button onClick={handleExport} disabled={isExporting}>
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              'Export Document'
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

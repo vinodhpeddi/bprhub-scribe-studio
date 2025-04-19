@@ -2,15 +2,20 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download, FileType, Copy, Save } from 'lucide-react';
+import { Download, FileText, Copy, Save, Import, List, FileUp } from 'lucide-react';
 import ExportModal from './ExportModal';
+import ImportModal from './ImportModal';
+import DocumentListModal from './DocumentListModal';
 import { toast } from 'sonner';
+import { UserDocument } from '@/utils/editorUtils';
 
 interface EditorHeaderProps {
   documentTitle: string;
   onTitleChange: (title: string) => void;
   onSave: () => void;
   documentContent: string;
+  onImport: (content: string) => void;
+  onDocumentSelect: (document: UserDocument) => void;
 }
 
 const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -18,8 +23,12 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   onTitleChange,
   onSave,
   documentContent,
+  onImport,
+  onDocumentSelect,
 }) => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
 
   const handleCopyAsText = () => {
     try {
@@ -44,6 +53,10 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
     toast.success('Document saved successfully');
   };
 
+  const handleImportComplete = (content: string) => {
+    onImport(content);
+  };
+
   return (
     <div className="flex flex-col gap-4 mb-4">
       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -55,6 +68,26 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
         />
         
         <div className="flex gap-2 ml-auto">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="whitespace-nowrap" 
+            onClick={() => setIsDocListModalOpen(true)}
+          >
+            <List className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Documents</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="whitespace-nowrap" 
+            onClick={() => setIsImportModalOpen(true)}
+          >
+            <FileUp className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Import</span>
+          </Button>
+          
           <Button 
             variant="outline" 
             size="sm" 
@@ -91,6 +124,19 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         documentContent={documentContent}
+        documentTitle={documentTitle}
+      />
+      
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportComplete={handleImportComplete}
+      />
+      
+      <DocumentListModal
+        isOpen={isDocListModalOpen}
+        onClose={() => setIsDocListModalOpen(false)}
+        onDocumentSelect={onDocumentSelect}
       />
     </div>
   );
