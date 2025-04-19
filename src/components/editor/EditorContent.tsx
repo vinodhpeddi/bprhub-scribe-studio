@@ -23,7 +23,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
   return (
     <div
       ref={editorRef}
-      className="editor-content"
+      className="editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto"
       contentEditable
       onInput={onInput}
       onPaste={onPaste}
@@ -31,6 +31,11 @@ const EditorContent: React.FC<EditorContentProps> = ({
       onKeyDown={onKeyDown}
       onMouseUp={onMouseUp}
       onClick={onClick}
+      style={{
+        fontSize: '14px',
+        lineHeight: '1.6',
+        fontFamily: 'Arial, sans-serif'
+      }}
     />
   );
 };

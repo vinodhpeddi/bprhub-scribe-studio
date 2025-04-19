@@ -28,8 +28,23 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
   useEffect(() => {
     if (actualEditorRef.current) {
       actualEditorRef.current.innerHTML = initialContent;
+      
+      // Check if document has any headings, if not, insert a default one
+      setTimeout(() => {
+        if (actualEditorRef.current) {
+          const headings = actualEditorRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
+          if (headings.length === 0 && initialContent.trim() === '') {
+            operations.insertDefaultHeading();
+            if (actualEditorRef.current) {
+              const newContent = actualEditorRef.current.innerHTML;
+              setContent(newContent);
+              onChange(newContent);
+            }
+          }
+        }
+      }, 100);
     }
-  }, [initialContent, actualEditorRef]);
+  }, [initialContent, actualEditorRef, operations, onChange]);
 
   const updateActiveFormats = () => {
     const formats: string[] = [];

@@ -6,7 +6,7 @@ export interface EditorOperations {
   insertChecklist: () => void;
   insertImage: () => void;
   handleListIndent: (increase: boolean) => void;
-  handleFormatClick: (formatType: string) => void;
+  handleFormatClick: (formatType: string, value?: string) => void;
 }
 
 export const useEditorOperations = (onChange: (content: string) => void) => {
@@ -45,6 +45,12 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
     }
   };
 
+  const insertDefaultHeading = () => {
+    // Insert a default heading if none exists in the document
+    const headingHtml = `<h1>Document Title</h1><p>Start writing your content here...</p>`;
+    document.execCommand('insertHTML', false, headingHtml);
+  };
+
   const handleListIndent = (increase: boolean) => {
     const selection = window.getSelection();
     if (!selection) return;
@@ -79,9 +85,9 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
     }
   };
 
-  const handleFormatClick = (formatType: string) => {
+  const handleFormatClick = (formatType: string, value?: string) => {
     let command = '';
-    let value = null;
+    let commandValue = null;
 
     switch (formatType) {
       case 'bold':
@@ -98,6 +104,18 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
         break;
       case 'orderedList':
         command = 'insertOrderedList';
+        break;
+      case 'formatBlock':
+        command = 'formatBlock';
+        commandValue = value;
+        break;
+      case 'fontName':
+        command = 'fontName';
+        commandValue = value;
+        break;
+      case 'fontSize':
+        command = 'fontSize';
+        commandValue = value;
         break;
       case 'table':
         insertTable();
@@ -121,13 +139,14 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
         return;
     }
 
-    document.execCommand(command, false, value);
+    document.execCommand(command, false, commandValue);
   };
 
   return {
     insertTable,
     insertChecklist,
     insertImage,
+    insertDefaultHeading,
     handleListIndent,
     handleFormatClick,
   };

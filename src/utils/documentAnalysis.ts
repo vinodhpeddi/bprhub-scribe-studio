@@ -73,7 +73,7 @@ export function validateDocument(title: string, content: string): { isValid: boo
   const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
   
   if (headings.length === 0) {
-    errors.push('Document should have at least one heading');
+    errors.push('Document requires at least one heading (H1-H6). Please add a heading using the Heading menu in the toolbar.');
   }
   
   return {
