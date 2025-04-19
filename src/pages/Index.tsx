@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditorHeader from '@/components/EditorHeader';
 import TextEditor from '@/components/TextEditor';
@@ -15,6 +16,7 @@ initPdfWorker();
 
 const Index = () => {
   const navigate = useNavigate();
+  const editorRef = useRef<HTMLDivElement>(null);
   const {
     documentTitle,
     setDocumentTitle,
@@ -84,11 +86,15 @@ const Index = () => {
             <TextEditor 
               initialContent={documentContent}
               onChange={setDocumentContent}
+              editorRef={editorRef}
             />
           </div>
           
           <div className="lg:col-span-1">
-            <DocumentOutline content={documentContent} />
+            <DocumentOutline 
+              content={documentContent} 
+              editorRef={editorRef}
+            />
           </div>
         </div>
       </main>

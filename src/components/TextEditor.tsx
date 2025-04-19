@@ -5,17 +5,19 @@ import FormatToolbar from './FormatToolbar';
 interface TextEditorProps {
   initialContent: string;
   onChange: (content: string) => void;
+  editorRef?: React.RefObject<HTMLDivElement>;
 }
 
-const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
+const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, editorRef }) => {
+  const defaultEditorRef = useRef<HTMLDivElement>(null);
+  const actualEditorRef = editorRef || defaultEditorRef;
   const [activeFormats, setActiveFormats] = useState<string[]>([]);
 
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = initialContent;
+    if (actualEditorRef.current) {
+      actualEditorRef.current.innerHTML = initialContent;
     }
-  }, [initialContent]);
+  }, [initialContent, actualEditorRef]);
 
   const handleFormatClick = (formatType: string) => {
     let command = '';
@@ -98,9 +100,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange }) => 
   };
 
   const handleEditorInput = () => {
-    if (editorRef.current) {
+    if (actualEditorRef.current) {
       updateActiveFormats();
-      onChange(editorRef.current.innerHTML);
+      onChange(actualEditorRef.current.innerHTML);
     }
   };
 
@@ -134,7 +136,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange }) => 
       <FormatToolbar onFormatClick={handleFormatClick} activeFormats={activeFormats} />
       
       <div
-        ref={editorRef}
+        ref={actualEditorRef}
         className="editor-content"
         contentEditable
         onInput={handleEditorInput}

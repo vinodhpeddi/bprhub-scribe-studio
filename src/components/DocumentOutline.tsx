@@ -1,16 +1,44 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { parseDocumentOutline, countElements } from '@/utils/editorUtils';
 
 interface DocumentOutlineProps {
   content: string;
+  editorRef?: React.RefObject<HTMLDivElement>;
 }
 
-const DocumentOutline: React.FC<DocumentOutlineProps> = ({ content }) => {
+const DocumentOutline: React.FC<DocumentOutlineProps> = ({ content, editorRef }) => {
   const headings = parseDocumentOutline(content);
   const stats = countElements(content);
+
+  const scrollToHeading = (id: string) => {
+    if (!editorRef?.current) return;
+    
+    const element = editorRef.current.querySelector(`[data-heading-id="${id}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Add a brief highlight effect
+      element.classList.add('bg-editor-soft-purple');
+      setTimeout(() => {
+        element.classList.remove('bg-editor-soft-purple');
+      }, 1000);
+    }
+  };
+
+  // Add heading IDs to the editor content when the outline is updated
+  useEffect(() => {
+    if (!editorRef?.current) return;
+    
+    const headingElements = editorRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    
+    headingElements.forEach((element, index) => {
+      const headingText = element.textContent || '';
+      const headingId = `heading-${index}-${headingText.toLowerCase().replace(/\s+/g, '-')}`;
+      element.setAttribute('data-heading-id', headingId);
+    });
+  }, [content, editorRef]);
 
   return (
     <div className="border rounded-md h-full flex flex-col bg-white">
@@ -25,7 +53,9 @@ const DocumentOutline: React.FC<DocumentOutlineProps> = ({ content }) => {
               <li 
                 key={heading.id} 
                 style={{ paddingLeft: `${(heading.level - 1) * 12}px` }}
-                className="py-1 px-2 rounded hover:bg-editor-soft-purple cursor-pointer text-sm truncate"
+                className="py-1 px-2 rounded hover:bg-editor-soft-purple cursor-pointer text-sm truncate transition-colors"
+                onClick={() => scrollToHeading(heading.id)}
+                title={heading.text}
               >
                 {heading.text}
               </li>
