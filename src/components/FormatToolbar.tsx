@@ -1,14 +1,24 @@
 
 import React, { useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image, IndentIncrease, IndentDecrease } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, Table, Check, Image, IndentIncrease, IndentDecrease, FileDown } from 'lucide-react';
 import IconButton from './ui/IconButton';
+import { exportDocument } from '@/utils/documentExport';
+import { defaultExportOptions } from '@/utils/documentTypes';
+import { toast } from 'sonner';
 
 interface FormatToolbarProps {
   onFormatClick: (formatType: string) => void;
   activeFormats: string[];
+  documentContent: string;
+  documentTitle: string;
 }
 
-const FormatToolbar: React.FC<FormatToolbarProps> = ({ onFormatClick, activeFormats }) => {
+const FormatToolbar: React.FC<FormatToolbarProps> = ({ 
+  onFormatClick, 
+  activeFormats,
+  documentContent,
+  documentTitle 
+}) => {
   const [isSticky, setIsSticky] = useState(false);
 
   React.useEffect(() => {
@@ -23,6 +33,20 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({ onFormatClick, activeForm
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  const handleExport = async (format: 'pdf' | 'word') => {
+    try {
+      const options = {
+        ...defaultExportOptions,
+        format: format,
+      };
+      await exportDocument(documentContent, options, documentTitle);
+      toast.success(`Document exported as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export document');
+    }
+  };
 
   const formatOptions = [
     { id: 'bold', icon: <Bold size={18} />, label: 'Bold' },
@@ -53,6 +77,20 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({ onFormatClick, activeForm
           onClick={() => onFormatClick(option.id)}
         />
       ))}
+
+      <div className="h-5 w-px bg-gray-200 mx-1" />
+      
+      <IconButton
+        icon={<FileDown size={18} />}
+        label="Export as PDF"
+        onClick={() => handleExport('pdf')}
+      />
+      
+      <IconButton
+        icon={<FileDown size={18} />}
+        label="Export as Word"
+        onClick={() => handleExport('word')}
+      />
     </div>
   );
 };
