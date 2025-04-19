@@ -114,12 +114,33 @@
   @apply mb-3 text-base;
 }
 
-.editor-content ul {
-  @apply list-disc pl-5 mb-3;
-}
-
 .editor-content ol {
   @apply list-decimal pl-5 mb-3;
+  counter-reset: item;
+}
+
+.editor-content ol ol {
+  list-style-type: none;
+  counter-reset: subitem;
+}
+
+.editor-content ol ol > li::before {
+  counter-increment: subitem;
+  content: counter(item) "." counter(subitem) " ";
+}
+
+.editor-content ol ol ol {
+  list-style-type: none;
+  counter-reset: subsubitem;
+}
+
+.editor-content ol ol ol > li::before {
+  counter-increment: subsubitem;
+  content: counter(item) "." counter(subitem) "." counter(subsubitem) " ";
+}
+
+.editor-content ul {
+  @apply list-disc pl-5 mb-3;
 }
 
 .editor-content table {
