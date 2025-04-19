@@ -2,6 +2,7 @@
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { initPdfWorker } from './pdfWorker';
+import { toast } from 'sonner';
 
 // Initialize PDF.js worker
 initPdfWorker();
@@ -12,18 +13,23 @@ export async function importDocument(file: File): Promise<string> {
     let content = '';
     
     if (fileType === 'application/pdf') {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-      
-      let textContent = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const text = await page.getTextContent();
-        textContent += text.items.map((item: any) => item.str).join(' ') + '\n\n';
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        
+        let textContent = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const text = await page.getTextContent();
+          textContent += text.items.map((item: any) => item.str).join(' ') + '\n\n';
+        }
+        
+        content = `<h1>${file.name.replace('.pdf', '')}</h1>` + 
+          textContent.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+      } catch (pdfError) {
+        console.error('PDF processing error:', pdfError);
+        throw new Error(`Failed to process PDF: ${pdfError.message}`);
       }
-      
-      content = `<h1>${file.name.replace('.pdf', '')}</h1>` + 
-        textContent.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
         
     } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
                fileType === 'application/msword') {
@@ -50,6 +56,7 @@ export async function importDocument(file: File): Promise<string> {
     return content;
   } catch (error) {
     console.error('Error importing document:', error);
+    toast.error(`Import failed: ${error.message || 'Unknown error'}`);
     throw error;
   }
 }
