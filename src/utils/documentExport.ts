@@ -2,7 +2,7 @@
 import { saveAs } from 'file-saver';
 import { ExportOptions } from './documentTypes';
 import { validateDocument } from './documentAnalysis';
-import { initPdfWorker } from './pdfWorker';
+import { initPdfWorker, validatePdfWorker } from './pdfWorker';
 import { htmlToPdf } from './exporters/pdfExporter';
 import { htmlToDocx } from './exporters/wordExporter';
 import { htmlToStandaloneHtml } from './exporters/htmlExporter';
@@ -26,6 +26,12 @@ export async function exportDocument(content: string, options: ExportOptions, ti
     
     switch (options.format) {
       case 'pdf':
+        // Verify PDF worker is properly initialized before PDF export
+        const isWorkerValid = await validatePdfWorker();
+        if (!isWorkerValid) {
+          throw new Error('PDF.js worker failed to initialize properly. PDF export is unavailable.');
+        }
+        
         blob = await htmlToPdf(content, options, title);
         filename = `${safeTitle}.pdf`;
         break;

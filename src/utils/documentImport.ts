@@ -1,7 +1,6 @@
-
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
-import { initPdfWorker } from './pdfWorker';
+import { initPdfWorker, validatePdfWorker } from './pdfWorker';
 import { toast } from 'sonner';
 
 // Initialize PDF.js worker
@@ -14,6 +13,12 @@ export async function importDocument(file: File): Promise<string> {
     
     if (fileType === 'application/pdf') {
       try {
+        // Validate PDF worker is available
+        const isWorkerValid = await validatePdfWorker();
+        if (!isWorkerValid) {
+          throw new Error('PDF.js worker failed to initialize properly');
+        }
+        
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
         
@@ -26,6 +31,8 @@ export async function importDocument(file: File): Promise<string> {
         
         content = `<h1>${file.name.replace('.pdf', '')}</h1>` + 
           textContent.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+          
+        console.log('PDF import successful:', { pages: pdf.numPages, contentLength: content.length });
       } catch (pdfError) {
         console.error('PDF processing error:', pdfError);
         throw new Error(`Failed to process PDF: ${pdfError.message}`);
@@ -58,5 +65,42 @@ export async function importDocument(file: File): Promise<string> {
     console.error('Error importing document:', error);
     toast.error(`Import failed: ${error.message || 'Unknown error'}`);
     throw error;
+  }
+}
+
+// Test function to verify import functionality
+export async function testDocumentImport(fileType: string): Promise<boolean> {
+  try {
+    // Create a test file based on the specified type
+    let testContent: string = '';
+    let testFile: File;
+    
+    switch (fileType) {
+      case 'text/plain':
+        testContent = 'Test content\n\nSecond paragraph';
+        testFile = new File([testContent], 'test.txt', { type: 'text/plain' });
+        break;
+        
+      case 'text/html':
+        testContent = '<html><body><h1>Test Title</h1><p>Test paragraph</p></body></html>';
+        testFile = new File([testContent], 'test.html', { type: 'text/html' });
+        break;
+        
+      // Note: PDF and Word imports are more complex to test as they require valid binary formats
+      // In a real test suite, you would use actual test files for these formats
+      
+      default:
+        console.warn(`Test for ${fileType} not implemented`);
+        return false;
+    }
+    
+    // Attempt to import the test file
+    const result = await importDocument(testFile);
+    
+    // Simple validation that the import returned content
+    return result.length > 0;
+  } catch (error) {
+    console.error('Import test failed:', error);
+    return false;
   }
 }
