@@ -1,5 +1,5 @@
 import { saveAs } from 'file-saver';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType } from 'docx';
 import * as pdfLib from 'pdf-lib';
 import mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
@@ -134,6 +134,19 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
   const docx = new Document({
     title: title,
     description: "Document created with BPRHub Scribe Studio",
+    sections: [
+      {
+        properties: {
+          type: SectionType.CONTINUOUS,
+        },
+        children: [
+          new Paragraph({
+            text: title,
+            heading: HeadingLevel.TITLE,
+          })
+        ],
+      }
+    ],
     styles: {
       paragraphStyles: [
         {
@@ -172,12 +185,6 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
         },
       ]
     }
-  });
-
-  // Add title
-  const titleParagraph = new Paragraph({
-    text: title,
-    heading: HeadingLevel.TITLE,
   });
 
   // Generate children recursively from HTML
@@ -272,21 +279,32 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
     }
   });
 
-  // Add all sections to the document
-  docx.addSection({
-    children: [titleParagraph, ...sections],
-    properties: {
-      page: {
-        size: {
-          width: options.paperSize === 'a4' ? 11906 : options.paperSize === 'letter' ? 12240 : 14040,
-          height: options.paperSize === 'a4' ? 16838 : options.paperSize === 'letter' ? 15840 : 22860,
+  // Create a new document with all content
+  const docWithContent = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            size: {
+              width: options.paperSize === 'a4' ? 11906 : options.paperSize === 'letter' ? 12240 : 14040,
+              height: options.paperSize === 'a4' ? 16838 : options.paperSize === 'letter' ? 15840 : 22860,
+            },
+          },
         },
-      },
-    },
+        children: [
+          new Paragraph({
+            text: title,
+            heading: HeadingLevel.TITLE,
+          }),
+          ...sections
+        ],
+      }
+    ],
+    styles: docx.styles,
   });
 
   // Generate the document blob
-  return await Packer.toBlob(docx);
+  return await Packer.toBlob(docWithContent);
 }
 
 async function htmlToPdf(content: string, options: ExportOptions, title: string): Promise<Blob> {
