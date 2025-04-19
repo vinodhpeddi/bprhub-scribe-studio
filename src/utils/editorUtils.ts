@@ -131,62 +131,44 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
   
-  const docx = new Document({
-    title: title,
-    description: "Document created with BPRHub Scribe Studio",
-    sections: [
-      {
-        properties: {
-          type: SectionType.CONTINUOUS,
+  // Define paragraph styles that will be used in the document
+  const paragraphStyles = [
+    {
+      id: "Heading1",
+      name: "Heading 1",
+      basedOn: "Normal",
+      next: "Normal",
+      quickFormat: true,
+      run: {
+        size: 36,
+        bold: true,
+        color: "000000",
+      },
+      paragraph: {
+        spacing: {
+          after: 200,
         },
-        children: [
-          new Paragraph({
-            text: title,
-            heading: HeadingLevel.TITLE,
-          })
-        ],
-      }
-    ],
-    styles: {
-      paragraphStyles: [
-        {
-          id: "Heading1",
-          name: "Heading 1",
-          basedOn: "Normal",
-          next: "Normal",
-          quickFormat: true,
-          run: {
-            size: 36,
-            bold: true,
-            color: "000000",
-          },
-          paragraph: {
-            spacing: {
-              after: 200,
-            },
-          },
+      },
+    },
+    {
+      id: "Heading2",
+      name: "Heading 2",
+      basedOn: "Normal",
+      next: "Normal",
+      quickFormat: true,
+      run: {
+        size: 30,
+        bold: true,
+        color: "000000",
+      },
+      paragraph: {
+        spacing: {
+          after: 120,
         },
-        {
-          id: "Heading2",
-          name: "Heading 2",
-          basedOn: "Normal",
-          next: "Normal",
-          quickFormat: true,
-          run: {
-            size: 30,
-            bold: true,
-            color: "000000",
-          },
-          paragraph: {
-            spacing: {
-              after: 120,
-            },
-          },
-        },
-      ]
-    }
-  });
-
+      },
+    },
+  ];
+  
   // Generate children recursively from HTML
   const sections = [];
   
@@ -279,8 +261,10 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
     }
   });
 
-  // Create a new document with all content
+  // Create a document with all the content and styles defined inline
   const docWithContent = new Document({
+    title: title,
+    description: "Document created with BPRHub Scribe Studio",
     sections: [
       {
         properties: {
@@ -300,7 +284,9 @@ async function htmlToDocx(content: string, options: ExportOptions, title: string
         ],
       }
     ],
-    styles: docx.styles,
+    styles: {
+      paragraphStyles: paragraphStyles
+    }
   });
 
   // Generate the document blob
