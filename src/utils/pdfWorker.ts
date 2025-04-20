@@ -5,9 +5,13 @@ import * as pdfjs from 'pdfjs-dist';
 export function initPdfWorker() {
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     try {
-      // Set the worker source using CDN
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-      console.log('PDF.js worker initialized with CDN worker');
+      // Using local worker file instead of CDN which was failing
+      const workerUrl = new URL(
+        'pdfjs-dist/build/pdf.worker.min.js',
+        import.meta.url
+      );
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl.href;
+      console.log('PDF.js worker initialized with local worker');
     } catch (error) {
       console.error('Error initializing PDF.js worker:', error);
       

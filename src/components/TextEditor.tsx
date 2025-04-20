@@ -4,7 +4,6 @@ import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
 import EditorContent from './editor/EditorContent';
 import { useEditorOperations } from '../hooks/useEditorOperations';
-import { importDocument } from '@/utils/documentImport';
 import { toast } from 'sonner';
 import MergeFieldsDropdown from './MergeFieldsDropdown';
 import { replaceMergeFields } from '@/utils/mergeFields';
@@ -28,6 +27,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [showTableProperties, setShowTableProperties] = useState(false);
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
   const [content, setContent] = useState(initialContent);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   
   const operations = useEditorOperations(onChange);
 
@@ -51,6 +51,20 @@ const TextEditor: React.FC<TextEditorProps> = ({
       }, 100);
     }
   }, [initialContent, actualEditorRef, operations, onChange]);
+
+  useEffect(() => {
+    // Handle Escape key to exit fullscreen
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullScreen]);
 
   const updateActiveFormats = () => {
     const formats: string[] = [];
@@ -108,33 +122,41 @@ const TextEditor: React.FC<TextEditorProps> = ({
     }
   };
 
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
+  };
+
   return (
-    <div className="w-full">
-      <FormatToolbar 
-        onFormatClick={operations.handleFormatClick} 
-        activeFormats={activeFormats}
-        documentContent={content}
-        documentTitle={documentTitle}
-      >
-        <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
-      </FormatToolbar>
-      
-      {showTableProperties && selectedTable && (
-        <TableProperties 
-          table={selectedTable}
-          onClose={() => setShowTableProperties(false)}
+    <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
+      <div className={`${isFullScreen ? 'container mx-auto max-w-6xl' : ''}`}>
+        <FormatToolbar 
+          onFormatClick={operations.handleFormatClick} 
+          activeFormats={activeFormats}
+          documentContent={content}
+          documentTitle={documentTitle}
+          onToggleFullScreen={toggleFullScreen}
+          isFullScreen={isFullScreen}
+        >
+          <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
+        </FormatToolbar>
+        
+        {showTableProperties && selectedTable && (
+          <TableProperties 
+            table={selectedTable}
+            onClose={() => setShowTableProperties(false)}
+          />
+        )}
+        
+        <EditorContent
+          editorRef={actualEditorRef}
+          onInput={handleEditorInput}
+          onPaste={handlePaste}
+          onKeyUp={updateActiveFormats}
+          onKeyDown={handleKeyDown}
+          onMouseUp={updateActiveFormats}
+          onClick={handleTableClick}
         />
-      )}
-      
-      <EditorContent
-        editorRef={actualEditorRef}
-        onInput={handleEditorInput}
-        onPaste={handlePaste}
-        onKeyUp={updateActiveFormats}
-        onKeyDown={handleKeyDown}
-        onMouseUp={updateActiveFormats}
-        onClick={handleTableClick}
-      />
+      </div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { TextFormatting } from './toolbar/TextFormatting';
 import { ListFormatting } from './toolbar/ListFormatting';
 import { HeadingControls } from './toolbar/HeadingControls';
@@ -6,12 +7,16 @@ import { InsertTools } from './toolbar/InsertTools';
 import { ExportTools } from './toolbar/ExportTools';
 import AIAssistantPanel from './AIAssistantPanel';
 import { toast } from 'sonner';
+import { Maximize, Minimize } from 'lucide-react';
+import IconButton from './ui/IconButton';
 
 interface FormatToolbarProps {
   onFormatClick: (formatType: string, value?: string) => void;
   activeFormats: string[];
   documentContent: string;
   documentTitle: string;
+  onToggleFullScreen: () => void;
+  isFullScreen: boolean;
   children?: React.ReactNode;
 }
 
@@ -20,11 +25,13 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
   activeFormats,
   documentContent,
   documentTitle,
+  onToggleFullScreen,
+  isFullScreen,
   children
 }) => {
   const [isSticky, setIsSticky] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       const offset = window.scrollY;
       setIsSticky(offset > 100);
@@ -59,6 +66,14 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
       <AIAssistantPanel onActionSelect={(actionId) => toast.info('Please connect to Supabase to use AI features')} />
       
       <ExportTools documentContent={documentContent} documentTitle={documentTitle} />
+      
+      <div className="h-5 w-px bg-gray-200 mx-1" />
+      
+      <IconButton
+        icon={isFullScreen ? <Minimize size={18} /> : <Maximize size={18} />}
+        label={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+        onClick={onToggleFullScreen}
+      />
       
       {children}
     </div>

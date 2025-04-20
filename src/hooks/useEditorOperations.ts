@@ -46,7 +46,7 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
   };
 
   const insertDefaultHeading = () => {
-    const headingHtml = `<h1>Document Title</h1><p>Start writing your content here...</p>`;
+    const headingHtml = `<h1>Your Document Title</h1><p>Start writing your content here...</p>`;
     document.execCommand('insertHTML', false, headingHtml);
   };
 

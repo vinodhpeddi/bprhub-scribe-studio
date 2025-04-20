@@ -5,6 +5,7 @@ import IconButton from '../ui/IconButton';
 import { exportDocument } from '@/utils/documentExport';
 import { defaultExportOptions } from '@/utils/documentTypes';
 import { toast } from 'sonner';
+import { validatePdfWorker } from '@/utils/pdfWorker';
 
 interface ExportToolsProps {
   documentContent: string;
@@ -14,17 +15,27 @@ interface ExportToolsProps {
 export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, documentTitle }) => {
   const [isExporting, setIsExporting] = useState(false);
   
-  const handleExport = async (format: 'pdf' | 'word') => {
+  const handleExport = async (format: 'pdf' | 'word' | 'html') => {
     if (isExporting) return;
     
     setIsExporting(true);
     try {
+      // Pre-validate PDF worker if exporting to PDF
+      if (format === 'pdf') {
+        const isWorkerValid = await validatePdfWorker();
+        if (!isWorkerValid) {
+          toast.error("PDF export is currently unavailable. Try exporting as Word instead.");
+          setIsExporting(false);
+          return;
+        }
+      }
+      
       const options = {
         ...defaultExportOptions,
         format: format,
       };
       
-      await exportDocument(documentContent, options, documentTitle);
+      await exportDocument(documentContent, options, documentTitle || "Document");
       toast.success(`Document exported as ${format.toUpperCase()}`);
     } catch (error) {
       console.error('Export error:', error);
@@ -46,6 +57,12 @@ export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, docum
         icon={isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
         label="Export as Word"
         onClick={() => handleExport('word')}
+        disabled={isExporting}
+      />
+      <IconButton
+        icon={isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
+        label="Export as HTML"
+        onClick={() => handleExport('html')}
         disabled={isExporting}
       />
     </div>

@@ -24,17 +24,20 @@ const EditorContent: React.FC<EditorContentProps> = ({
     <div
       ref={editorRef}
       className="editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto"
-      contentEditable
+      contentEditable={true}
+      suppressContentEditableWarning={true}
       onInput={onInput}
       onPaste={onPaste}
       onKeyUp={onKeyUp}
       onKeyDown={onKeyDown}
       onMouseUp={onMouseUp}
       onClick={onClick}
+      spellCheck={true}
       style={{
         fontSize: '14px',
         lineHeight: '1.6',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Arial, sans-serif',
+        minHeight: '50vh'
       }}
     />
   );

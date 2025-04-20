@@ -68,8 +68,8 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3 space-y-4">
             <EditorHeader 
-              documentTitle={documentTitle}
-              onTitleChange={setDocumentTitle}
+              documentTitle={documentTitle || ""}
+              onTitleChange={(title) => setDocumentTitle(title)}
               onSave={handleSaveDocument}
               documentContent={documentContent}
               onImport={handleImportComplete}
