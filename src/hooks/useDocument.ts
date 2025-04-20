@@ -18,11 +18,9 @@ export function useDocument() {
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
   const [currentDocument, setCurrentDocument] = useState<UserDocument | null>(null);
   
-  // Use refs to track the previous values and detect actual changes
-  const previousTitleRef = useRef(documentTitle);
-  const previousContentRef = useRef(documentContent);
+  const contentRef = useRef(documentContent);
+  const titleRef = useRef(documentTitle);
   const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isProcessingUpdate = useRef(false);
 
   useEffect(() => {
     const existingDoc = location.state?.document;
@@ -34,38 +32,25 @@ export function useDocument() {
   const handleDocumentSelect = useCallback((document: UserDocument) => {
     setCurrentDocument(document);
     setDocumentTitle(document.title);
-    previousTitleRef.current = document.title;
+    titleRef.current = document.title;
     setDocumentContent(document.content);
-    previousContentRef.current = document.content;
+    contentRef.current = document.content;
   }, []);
 
-  // Debounced title change handler with cursor position preservation
   const setDocumentTitleDebounced = useCallback((title: string) => {
-    if (title !== previousTitleRef.current && !isProcessingUpdate.current) {
-      isProcessingUpdate.current = true;
-      previousTitleRef.current = title;
-      setDocumentTitle(title);
-      setTimeout(() => {
-        isProcessingUpdate.current = false;
-      }, 0);
-    }
+    titleRef.current = title;
+    setDocumentTitle(title);
   }, []);
 
-  // Debounced content change handler
   const setDocumentContentDebounced = useCallback((content: string) => {
     if (contentUpdateTimeoutRef.current) {
       clearTimeout(contentUpdateTimeoutRef.current);
     }
     
+    contentRef.current = content;
+    
     contentUpdateTimeoutRef.current = setTimeout(() => {
-      if (content !== previousContentRef.current && !isProcessingUpdate.current) {
-        isProcessingUpdate.current = true;
-        previousContentRef.current = content;
-        setDocumentContent(content);
-        setTimeout(() => {
-          isProcessingUpdate.current = false;
-        }, 0);
-      }
+      setDocumentContent(content);
     }, 300);
   }, []);
 
@@ -77,8 +62,8 @@ export function useDocument() {
     
     const updatedDoc: UserDocument = {
       ...currentDocument,
-      title: documentTitle,
-      content: documentContent,
+      title: titleRef.current,
+      content: contentRef.current,
       lastModified: new Date().toISOString()
     };
     
@@ -90,7 +75,7 @@ export function useDocument() {
       console.error('Error saving document:', error);
       toast.error('Failed to save document');
     }
-  }, [currentDocument, documentTitle, documentContent]);
+  }, [currentDocument]);
 
   const handleFinalizeDocument = useCallback(() => {
     if (!currentDocument) {

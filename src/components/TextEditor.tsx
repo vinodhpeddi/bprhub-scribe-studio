@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -27,10 +26,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [showTableProperties, setShowTableProperties] = useState(false);
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const isInitializedRef = useRef(false);
-  const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastContentRef = useRef<string>(initialContent);
-  const skipNextUpdateRef = useRef(false);
   
   // Use memoized operations to prevent unnecessary re-renders
   const operations = useEditorOperations(onChange);
@@ -193,6 +188,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
           onKeyDown={handleKeyDown}
           onMouseUp={updateActiveFormats}
           onClick={handleTableClick}
+          initialContent={initialContent}
         />
       </div>
     </div>
