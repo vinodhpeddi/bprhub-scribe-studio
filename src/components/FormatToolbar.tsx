@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Bold, 
@@ -17,7 +18,10 @@ import {
   Heading3, 
   Highlighter, 
   Pencil, 
-  MessageSquare 
+  MessageSquare,
+  AlertTriangle,
+  Info,
+  Shield
 } from 'lucide-react';
 import IconButton from './ui/IconButton';
 import { exportDocument } from '@/utils/documentExport';
@@ -82,6 +86,9 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
     { id: 'highlight', icon: <Highlighter size={18} />, label: 'Highlight' },
     { id: 'redline', icon: <Pencil size={18} />, label: 'Redline' },
     { id: 'comment', icon: <MessageSquare size={18} />, label: 'Add Comment' },
+    { id: 'warning', icon: <AlertTriangle size={18} />, label: 'Add Warning Box' },
+    { id: 'safety', icon: <Shield size={18} />, label: 'Add Safety Note' },
+    { id: 'info', icon: <Info size={18} />, label: 'Add Information Box' },
     { id: 'table', icon: <Table size={18} />, label: 'Insert Table' },
     { id: 'layoutTable', icon: <Table size={18} />, label: 'Layout Table' },
     { id: 'checklist', icon: <Check size={18} />, label: 'Checklist' },

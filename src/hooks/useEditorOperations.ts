@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 
 export interface EditorOperations {
@@ -46,7 +45,6 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
   };
 
   const insertDefaultHeading = () => {
-    // Insert a default heading if none exists in the document
     const headingHtml = `<h1>Document Title</h1><p>Start writing your content here...</p>`;
     document.execCommand('insertHTML', false, headingHtml);
   };
@@ -158,6 +156,24 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
         return;
       case 'outdentList':
         handleListIndent(false);
+        return;
+      case 'warning':
+        const warningHtml = `<div style="background-color: #FEF7CD; border: 1px solid #EAB308; border-radius: 4px; padding: 12px; margin: 8px 0;">
+          <p style="color: #854D0E; margin: 0;"><strong>⚠️ Warning:</strong> Add your warning text here</p>
+        </div><p></p>`;
+        document.execCommand('insertHTML', false, warningHtml);
+        return;
+      case 'safety':
+        const safetyHtml = `<div style="background-color: #E5DEFF; border: 1px solid #6E59A5; border-radius: 4px; padding: 12px; margin: 8px 0;">
+          <p style="color: #1A1F2C; margin: 0;"><strong>🛡️ Safety Note:</strong> Add safety instructions here</p>
+        </div><p></p>`;
+        document.execCommand('insertHTML', false, safetyHtml);
+        return;
+      case 'info':
+        const infoHtml = `<div style="background-color: #D3E4FD; border: 1px solid #0EA5E9; border-radius: 4px; padding: 12px; margin: 8px 0;">
+          <p style="color: #0C4A6E; margin: 0;"><strong>ℹ️ Note:</strong> Add important information here</p>
+        </div><p></p>`;
+        document.execCommand('insertHTML', false, infoHtml);
         return;
       default:
         return;

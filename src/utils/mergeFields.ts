@@ -6,10 +6,15 @@ export interface MergeField {
 }
 
 export const availableMergeFields: MergeField[] = [
-  { key: 'CustomerName', label: 'Customer Name', sampleValue: 'John Doe' },
-  { key: 'InvoiceDate', label: 'Invoice Date', sampleValue: new Date().toLocaleDateString() },
-  { key: 'CompanyName', label: 'Company Name', sampleValue: 'ACME Corp' },
-  { key: 'DocumentNumber', label: 'Document Number', sampleValue: 'DOC-2025-001' }
+  { key: 'DocumentNumber', label: 'Document Number', sampleValue: 'SOP-2025-001' },
+  { key: 'RevisionNumber', label: 'Revision Number', sampleValue: 'Rev. 1.0' },
+  { key: 'EffectiveDate', label: 'Effective Date', sampleValue: new Date().toLocaleDateString() },
+  { key: 'Department', label: 'Department', sampleValue: 'Manufacturing' },
+  { key: 'Approver', label: 'Approver Name', sampleValue: 'John Smith' },
+  { key: 'ReviewDate', label: 'Review Date', sampleValue: new Date().toLocaleDateString() },
+  { key: 'EquipmentID', label: 'Equipment ID', sampleValue: 'EQ-001' },
+  { key: 'SafetyWarning', label: 'Safety Warning', sampleValue: 'Wear appropriate PPE' },
+  { key: 'QualityStandard', label: 'Quality Standard', sampleValue: 'ISO 9001:2015' }
 ];
 
 export const replaceMergeFields = (content: string, useRealData: boolean = false): string => {
