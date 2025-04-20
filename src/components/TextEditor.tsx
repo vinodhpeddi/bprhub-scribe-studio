@@ -1,11 +1,11 @@
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
 import EditorContent from './editor/EditorContent';
 import { useEditorOperations } from '../hooks/useEditorOperations';
-import { toast } from 'sonner';
 import MergeFieldsDropdown from './MergeFieldsDropdown';
-import { replaceMergeFields } from '@/utils/mergeFields';
+import { useEditorState } from '../hooks/useEditorState';
 
 interface TextEditorProps {
   initialContent: string;
@@ -27,40 +27,24 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   
+  // Use the new hook for editor state management
+  const { 
+    content, 
+    setContent, 
+    isInitialized,
+    setIsInitialized
+  } = useEditorState(initialContent);
+  
   // Use memoized operations to prevent unnecessary re-renders
   const operations = useEditorOperations(onChange);
 
-  // Initialize editor content only once
-  useEffect(() => {
-    if (actualEditorRef.current && !isInitializedRef.current) {
-      actualEditorRef.current.innerHTML = initialContent;
-      lastContentRef.current = initialContent;
-      isInitializedRef.current = true;
-      
-      // Check if document has any headings, if not, insert a default one
-      if (actualEditorRef.current.innerHTML.trim() === '') {
-        setTimeout(() => {
-          if (actualEditorRef.current) {
-            operations.insertDefaultHeading();
-            // Don't update state here, let the normal input handler handle it
-          }
-        }, 100);
-      }
-    }
-  }, [initialContent, actualEditorRef, operations]);
-
   // Handle programmatic content updates
   useEffect(() => {
-    if (isInitializedRef.current && initialContent !== lastContentRef.current) {
-      // Skip next internal update to avoid cursor reset
-      skipNextUpdateRef.current = true;
-      
-      if (actualEditorRef.current) {
-        actualEditorRef.current.innerHTML = initialContent;
-        lastContentRef.current = initialContent;
-      }
+    if (isInitialized && initialContent !== content) {
+      // Update the content if it's changed externally
+      setContent(initialContent);
     }
-  }, [initialContent]);
+  }, [initialContent, isInitialized, content, setContent]);
 
   useEffect(() => {
     // Handle Escape key to exit fullscreen
@@ -105,28 +89,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
     if (actualEditorRef.current) {
       updateActiveFormats();
       
-      // If we're handling a programmatic update, skip this update cycle
-      if (skipNextUpdateRef.current) {
-        skipNextUpdateRef.current = false;
-        return;
-      }
-      
-      // Debounce content updates to reduce re-renders
-      if (contentUpdateTimeoutRef.current) {
-        clearTimeout(contentUpdateTimeoutRef.current);
-      }
-      
-      contentUpdateTimeoutRef.current = setTimeout(() => {
-        if (actualEditorRef.current) {
-          const newContent = actualEditorRef.current.innerHTML;
-          if (newContent !== lastContentRef.current) {
-            lastContentRef.current = newContent;
-            onChange(newContent);
-          }
-        }
-      }, 300);
+      // Get content and propagate change
+      const newContent = actualEditorRef.current.innerHTML;
+      setContent(newContent);
+      onChange(newContent);
     }
-  }, [updateActiveFormats, onChange, actualEditorRef]);
+  }, [updateActiveFormats, onChange, actualEditorRef, setContent]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
@@ -145,10 +113,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
     document.execCommand('insertHTML', false, field);
     if (actualEditorRef.current) {
       const newContent = actualEditorRef.current.innerHTML;
-      lastContentRef.current = newContent;
+      setContent(newContent);
       onChange(newContent);
     }
-  }, [onChange, actualEditorRef]);
+  }, [onChange, actualEditorRef, setContent]);
 
   const toggleFullScreen = useCallback(() => {
     setIsFullScreen(!isFullScreen);
@@ -159,14 +127,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
     <FormatToolbar 
       onFormatClick={operations.handleFormatClick} 
       activeFormats={activeFormats}
-      documentContent={lastContentRef.current}
+      documentContent={content}
       documentTitle={documentTitle}
       onToggleFullScreen={toggleFullScreen}
       isFullScreen={isFullScreen}
     >
       <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
     </FormatToolbar>
-  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField]);
+  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField, content]);
 
   return (
     <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
@@ -189,6 +157,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
           onMouseUp={updateActiveFormats}
           onClick={handleTableClick}
           initialContent={initialContent}
+          isInitialized={isInitialized}
+          setIsInitialized={setIsInitialized}
         />
       </div>
     </div>

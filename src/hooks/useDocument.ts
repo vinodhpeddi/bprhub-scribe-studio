@@ -18,8 +18,10 @@ export function useDocument() {
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
   const [currentDocument, setCurrentDocument] = useState<UserDocument | null>(null);
   
+  // Refs to store current values without triggering re-renders
   const contentRef = useRef(documentContent);
   const titleRef = useRef(documentTitle);
+  // Timeout ref for debouncing updates
   const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -37,17 +39,21 @@ export function useDocument() {
     contentRef.current = document.content;
   }, []);
 
+  // Debounced title setter that updates the ref immediately
   const setDocumentTitleDebounced = useCallback((title: string) => {
     titleRef.current = title;
     setDocumentTitle(title);
   }, []);
 
+  // Debounced content setter that updates the ref immediately
   const setDocumentContentDebounced = useCallback((content: string) => {
+    // Store current value in ref immediately
+    contentRef.current = content;
+    
+    // Debounce the state update to reduce re-renders
     if (contentUpdateTimeoutRef.current) {
       clearTimeout(contentUpdateTimeoutRef.current);
     }
-    
-    contentRef.current = content;
     
     contentUpdateTimeoutRef.current = setTimeout(() => {
       setDocumentContent(content);

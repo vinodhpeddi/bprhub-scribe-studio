@@ -1,12 +1,7 @@
 
-import React, { useState, useRef, useCallback, memo, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Download, FileText, Copy, Save, Import, List, FileUp } from 'lucide-react';
-import ExportModal from './ExportModal';
-import ImportModal from './ImportModal';
-import DocumentListModal from './DocumentListModal';
-import { toast } from 'sonner';
+import React from 'react';
+import DocumentTitleInput from './editor/DocumentTitleInput';
+import EditorActionButtons from './editor/EditorActionButtons';
 import { UserDocument } from '@/utils/editorUtils';
 
 interface EditorHeaderProps {
@@ -26,187 +21,24 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   onImport,
   onDocumentSelect,
 }) => {
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const [localTitle, setLocalTitle] = useState(documentTitle);
-  const cursorPositionRef = useRef<number | null>(null);
-  const skipUpdateRef = useRef(false);
-
-  // Use debounce for title changes to avoid excessive re-renders
-  const titleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
-    setLocalTitle(newTitle);
-    
-    // Save cursor position
-    if (titleInputRef.current) {
-      cursorPositionRef.current = titleInputRef.current.selectionStart;
-    }
-    
-    // Debounce the propagation to parent component
-    if (titleChangeTimeoutRef.current) {
-      clearTimeout(titleChangeTimeoutRef.current);
-    }
-    
-    titleChangeTimeoutRef.current = setTimeout(() => {
-      onTitleChange(newTitle);
-    }, 300);
-  }, [onTitleChange]);
-
-  // Restore cursor position after input update
-  useEffect(() => {
-    if (titleInputRef.current && cursorPositionRef.current !== null) {
-      titleInputRef.current.selectionStart = cursorPositionRef.current;
-      titleInputRef.current.selectionEnd = cursorPositionRef.current;
-      cursorPositionRef.current = null;
-    }
-  }, [localTitle]);
-
-  // Update local title when prop changes (but only if not from local edit)
-  useEffect(() => {
-    if (skipUpdateRef.current) {
-      skipUpdateRef.current = false;
-      return;
-    }
-    
-    if (documentTitle !== localTitle) {
-      setLocalTitle(documentTitle);
-    }
-  }, [documentTitle]);
-
-  const handleCopyAsText = useCallback(() => {
-    try {
-      // Create a new div element
-      const tempElement = document.createElement('div');
-      tempElement.innerHTML = documentContent;
-      
-      // Get the text content
-      const textContent = tempElement.textContent || tempElement.innerText;
-      
-      // Copy to clipboard
-      navigator.clipboard.writeText(textContent);
-      toast.success('Content copied to clipboard');
-    } catch (error) {
-      console.error('Failed to copy content:', error);
-      toast.error('Failed to copy content');
-    }
-  }, [documentContent]);
-
-  const handleSave = useCallback(() => {
-    onSave();
-    toast.success('Document saved successfully');
-  }, [onSave]);
-
-  const handleImportComplete = useCallback((content: string) => {
-    onImport(content);
-  }, [onImport]);
-
-  const handleTitleFocus = useCallback(() => {
-    if (titleInputRef.current) {
-      titleInputRef.current.select();
-    }
-  }, []);
-  
-  const handleTitleBlur = useCallback(() => {
-    skipUpdateRef.current = true;
-    onTitleChange(localTitle);
-  }, [localTitle, onTitleChange]);
-
-  // Update local title when prop changes
-  useEffect(() => {
-    setLocalTitle(documentTitle);
-  }, [documentTitle]);
-
   return (
     <div className="flex flex-col gap-4 mb-4">
       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-        <Input
-          ref={titleInputRef}
-          value={localTitle}
-          onChange={handleTitleChange}
-          className="text-xl font-semibold flex-grow"
-          placeholder="Document Title"
-          onFocus={handleTitleFocus}
-          onBlur={handleTitleBlur}
+        <DocumentTitleInput 
+          title={documentTitle} 
+          onTitleChange={onTitleChange} 
         />
         
-        <div className="flex gap-2 ml-auto">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="whitespace-nowrap" 
-            onClick={() => setIsDocListModalOpen(true)}
-          >
-            <List className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Documents</span>
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="whitespace-nowrap" 
-            onClick={() => setIsImportModalOpen(true)}
-          >
-            <FileUp className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Import</span>
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="whitespace-nowrap" 
-            onClick={handleCopyAsText}
-          >
-            <Copy className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Copy Text</span>
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="whitespace-nowrap"
-            onClick={() => setIsExportModalOpen(true)}
-          >
-            <Download className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
-          
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="whitespace-nowrap bg-editor-primary hover:bg-editor-secondary"
-            onClick={handleSave}
-          >
-            <Save className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Save</span>
-          </Button>
-        </div>
+        <EditorActionButtons
+          onSave={onSave}
+          documentContent={documentContent}
+          documentTitle={documentTitle}
+          onImport={onImport}
+          onDocumentSelect={onDocumentSelect}
+        />
       </div>
-
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        documentContent={documentContent}
-        documentTitle={documentTitle}
-      />
-      
-      <ImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImportComplete={handleImportComplete}
-      />
-      
-      <DocumentListModal
-        isOpen={isDocListModalOpen}
-        onClose={() => setIsDocListModalOpen(false)}
-        onDocumentSelect={onDocumentSelect}
-      />
     </div>
   );
 };
 
-// Wrap with memo to prevent unnecessary re-renders
-export default memo(EditorHeader);
+export default React.memo(EditorHeader);

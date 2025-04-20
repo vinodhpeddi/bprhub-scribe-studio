@@ -10,6 +10,8 @@ interface EditorContentProps {
   onMouseUp: () => void;
   onClick: (e: React.MouseEvent) => void;
   initialContent: string;
+  isInitialized: boolean;
+  setIsInitialized: (value: boolean) => void;
 }
 
 const EditorContent: React.FC<EditorContentProps> = ({
@@ -21,8 +23,9 @@ const EditorContent: React.FC<EditorContentProps> = ({
   onMouseUp,
   onClick,
   initialContent,
+  isInitialized,
+  setIsInitialized
 }) => {
-  const isInitializedRef = useRef(false);
   const lastSelectionRef = useRef<{
     node: Node | null;
     offset: number;
@@ -32,11 +35,11 @@ const EditorContent: React.FC<EditorContentProps> = ({
 
   // Initialize content only once on mount
   useEffect(() => {
-    if (!isInitializedRef.current && editorRef.current) {
+    if (!isInitialized && editorRef.current) {
       editorRef.current.innerHTML = initialContent;
-      isInitializedRef.current = true;
+      setIsInitialized(true);
     }
-  }, [initialContent]);
+  }, [initialContent, isInitialized, setIsInitialized]);
 
   const saveSelection = () => {
     const selection = window.getSelection();
