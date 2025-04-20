@@ -29,17 +29,25 @@ const EditorContent: React.FC<EditorContentProps> = ({
     // Fix cursor position issue by adding a click listener directly to the DOM element
     const element = editorRef.current;
     const handleNativeClick = (e: MouseEvent) => {
-      // Prevent default only if needed to intercept native behavior
-      if (document.getSelection()?.isCollapsed) {
-        // This ensures that clicking in the editor works properly for cursor positioning
+      e.stopPropagation(); // Prevent event bubbling
+      
+      // This ensures that clicking in the editor works properly for cursor positioning
+      try {
         const range = document.caretRangeFromPoint(e.clientX, e.clientY);
         if (range) {
           const selection = window.getSelection();
           if (selection) {
             selection.removeAllRanges();
             selection.addRange(range);
+            
+            // Ensure the editor maintains focus
+            if (editorRef.current) {
+              editorRef.current.focus();
+            }
           }
         }
+      } catch (err) {
+        console.error("Error setting cursor position:", err);
       }
     };
     
