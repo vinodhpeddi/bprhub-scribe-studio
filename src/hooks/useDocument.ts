@@ -22,6 +22,7 @@ export function useDocument() {
   const previousTitleRef = useRef(documentTitle);
   const previousContentRef = useRef(documentContent);
   const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isProcessingUpdate = useRef(false);
 
   useEffect(() => {
     const existingDoc = location.state?.document;
@@ -38,11 +39,15 @@ export function useDocument() {
     previousContentRef.current = document.content;
   }, []);
 
-  // Debounced title change handler
+  // Debounced title change handler with cursor position preservation
   const setDocumentTitleDebounced = useCallback((title: string) => {
-    if (title !== previousTitleRef.current) {
+    if (title !== previousTitleRef.current && !isProcessingUpdate.current) {
+      isProcessingUpdate.current = true;
       previousTitleRef.current = title;
       setDocumentTitle(title);
+      setTimeout(() => {
+        isProcessingUpdate.current = false;
+      }, 0);
     }
   }, []);
 
@@ -53,9 +58,13 @@ export function useDocument() {
     }
     
     contentUpdateTimeoutRef.current = setTimeout(() => {
-      if (content !== previousContentRef.current) {
+      if (content !== previousContentRef.current && !isProcessingUpdate.current) {
+        isProcessingUpdate.current = true;
         previousContentRef.current = content;
         setDocumentContent(content);
+        setTimeout(() => {
+          isProcessingUpdate.current = false;
+        }, 0);
       }
     }, 300);
   }, []);

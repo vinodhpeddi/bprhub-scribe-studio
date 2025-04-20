@@ -26,6 +26,8 @@ const EditorContent: React.FC<EditorContentProps> = ({
   const lastSelectionRef = useRef<{
     node: Node | null;
     offset: number;
+    endNode?: Node | null;
+    endOffset?: number;
   } | null>(null);
 
   // Save selection state before any potential re-renders
@@ -35,7 +37,9 @@ const EditorContent: React.FC<EditorContentProps> = ({
       const range = selection.getRangeAt(0);
       lastSelectionRef.current = {
         node: range.startContainer,
-        offset: range.startOffset
+        offset: range.startOffset,
+        endNode: range.endContainer,
+        endOffset: range.endOffset
       };
     }
   };
@@ -43,14 +47,20 @@ const EditorContent: React.FC<EditorContentProps> = ({
   // Restore selection after re-renders
   const restoreSelection = () => {
     if (lastSelectionRef.current && editorRef.current) {
-      const { node, offset } = lastSelectionRef.current;
+      const { node, offset, endNode, endOffset } = lastSelectionRef.current;
       try {
         if (node && editorRef.current.contains(node)) {
           const range = document.createRange();
           const selection = window.getSelection();
           
           range.setStart(node, offset);
-          range.collapse(true);
+          
+          // If we have end position (for selections, not just cursor)
+          if (endNode && endOffset !== undefined && editorRef.current.contains(endNode)) {
+            range.setEnd(endNode, endOffset);
+          } else {
+            range.collapse(true);
+          }
           
           if (selection) {
             selection.removeAllRanges();
@@ -70,24 +80,10 @@ const EditorContent: React.FC<EditorContentProps> = ({
     const element = editorRef.current;
     
     const handleNativeClick = (e: MouseEvent) => {
-      // Don't use stopPropagation as it can prevent React events
-      // We just want to ensure the native cursor positioning works correctly
-      
-      // This ensures that clicking in the editor works properly for cursor positioning
-      try {
-        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-        if (range) {
-          const selection = window.getSelection();
-          if (selection) {
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            // Don't programmatically set focus here, let the natural DOM focus occur
-          }
-        }
-      } catch (err) {
-        console.error("Error setting cursor position:", err);
-      }
+      // Save the current selection immediately after click
+      requestAnimationFrame(() => {
+        saveSelection();
+      });
     };
     
     element.addEventListener('mousedown', handleNativeClick);
@@ -113,9 +109,27 @@ const EditorContent: React.FC<EditorContentProps> = ({
     };
   }, [editorRef]);
 
-  // Save selection before input events that might trigger re-renders
+  // Save selection with more events
   const handleBeforeInput = () => {
     saveSelection();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    saveSelection();
+    onKeyDown(e);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Use requestAnimationFrame to let the browser update the selection first
+    requestAnimationFrame(() => {
+      saveSelection();
+    });
+    onClick(e);
+  };
+
+  const handleMouseUp = () => {
+    saveSelection();
+    onMouseUp();
   };
 
   return (
@@ -127,9 +141,9 @@ const EditorContent: React.FC<EditorContentProps> = ({
       onInput={onInput}
       onPaste={onPaste}
       onKeyUp={onKeyUp}
-      onKeyDown={onKeyDown}
-      onMouseUp={onMouseUp}
-      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      onMouseUp={handleMouseUp}
+      onClick={handleClick}
       onBeforeInput={handleBeforeInput}
       spellCheck={true}
       style={{

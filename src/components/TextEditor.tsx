@@ -30,6 +30,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const isInitializedRef = useRef(false);
   const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastContentRef = useRef<string>(initialContent);
+  const skipNextUpdateRef = useRef(false);
   
   // Use memoized operations to prevent unnecessary re-renders
   const operations = useEditorOperations(onChange);
@@ -52,6 +53,19 @@ const TextEditor: React.FC<TextEditorProps> = ({
       }
     }
   }, [initialContent, actualEditorRef, operations]);
+
+  // Handle programmatic content updates
+  useEffect(() => {
+    if (isInitializedRef.current && initialContent !== lastContentRef.current) {
+      // Skip next internal update to avoid cursor reset
+      skipNextUpdateRef.current = true;
+      
+      if (actualEditorRef.current) {
+        actualEditorRef.current.innerHTML = initialContent;
+        lastContentRef.current = initialContent;
+      }
+    }
+  }, [initialContent]);
 
   useEffect(() => {
     // Handle Escape key to exit fullscreen
@@ -95,6 +109,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const handleEditorInput = useCallback(() => {
     if (actualEditorRef.current) {
       updateActiveFormats();
+      
+      // If we're handling a programmatic update, skip this update cycle
+      if (skipNextUpdateRef.current) {
+        skipNextUpdateRef.current = false;
+        return;
+      }
       
       // Debounce content updates to reduce re-renders
       if (contentUpdateTimeoutRef.current) {

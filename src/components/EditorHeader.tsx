@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback, memo } from 'react';
+import React, { useState, useRef, useCallback, memo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, FileText, Copy, Save, Import, List, FileUp } from 'lucide-react';
@@ -31,6 +31,8 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [localTitle, setLocalTitle] = useState(documentTitle);
+  const cursorPositionRef = useRef<number | null>(null);
+  const skipUpdateRef = useRef(false);
 
   // Use debounce for title changes to avoid excessive re-renders
   const titleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -38,6 +40,11 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     setLocalTitle(newTitle);
+    
+    // Save cursor position
+    if (titleInputRef.current) {
+      cursorPositionRef.current = titleInputRef.current.selectionStart;
+    }
     
     // Debounce the propagation to parent component
     if (titleChangeTimeoutRef.current) {
@@ -48,6 +55,27 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
       onTitleChange(newTitle);
     }, 300);
   }, [onTitleChange]);
+
+  // Restore cursor position after input update
+  useEffect(() => {
+    if (titleInputRef.current && cursorPositionRef.current !== null) {
+      titleInputRef.current.selectionStart = cursorPositionRef.current;
+      titleInputRef.current.selectionEnd = cursorPositionRef.current;
+      cursorPositionRef.current = null;
+    }
+  }, [localTitle]);
+
+  // Update local title when prop changes (but only if not from local edit)
+  useEffect(() => {
+    if (skipUpdateRef.current) {
+      skipUpdateRef.current = false;
+      return;
+    }
+    
+    if (documentTitle !== localTitle) {
+      setLocalTitle(documentTitle);
+    }
+  }, [documentTitle]);
 
   const handleCopyAsText = useCallback(() => {
     try {
@@ -81,9 +109,14 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
       titleInputRef.current.select();
     }
   }, []);
+  
+  const handleTitleBlur = useCallback(() => {
+    skipUpdateRef.current = true;
+    onTitleChange(localTitle);
+  }, [localTitle, onTitleChange]);
 
   // Update local title when prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalTitle(documentTitle);
   }, [documentTitle]);
 
@@ -97,7 +130,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
           className="text-xl font-semibold flex-grow"
           placeholder="Document Title"
           onFocus={handleTitleFocus}
-          onBlur={() => onTitleChange(localTitle)}
+          onBlur={handleTitleBlur}
         />
         
         <div className="flex gap-2 ml-auto">
