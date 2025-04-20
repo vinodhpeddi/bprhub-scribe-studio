@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Bold, 
@@ -21,7 +20,8 @@ import {
   MessageSquare,
   AlertTriangle,
   Info,
-  Shield
+  Shield,
+  Bot
 } from 'lucide-react';
 import IconButton from './ui/IconButton';
 import { exportDocument } from '@/utils/documentExport';
@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Button } from './ui/button';
+import AIAssistantPanel from './AIAssistantPanel';
 
 interface FormatToolbarProps {
   onFormatClick: (formatType: string, value?: string) => void;
@@ -73,6 +74,10 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
       console.error('Export error:', error);
       toast.error('Failed to export document');
     }
+  };
+
+  const handleAIAction = async (actionId: string) => {
+    toast.info('Please connect to Supabase to use AI features');
   };
 
   const formatOptions = [
@@ -182,6 +187,8 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
       ))}
 
       <div className="h-5 w-px bg-gray-200 mx-1" />
+      
+      <AIAssistantPanel onActionSelect={handleAIAction} />
       
       <IconButton
         icon={<FileDown size={18} />}
