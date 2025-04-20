@@ -87,6 +87,7 @@ const Index = () => {
               initialContent={documentContent}
               onChange={setDocumentContent}
               editorRef={editorRef}
+              documentTitle={documentTitle}
             />
           </div>
           

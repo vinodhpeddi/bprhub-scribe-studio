@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 
 export interface EditorOperations {
@@ -103,6 +104,14 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
       case 'orderedList':
         command = 'insertOrderedList';
         break;
+      case 'foreColor':
+        command = 'foreColor';
+        commandValue = value;
+        break;
+      case 'hiliteColor':
+        command = 'hiliteColor';
+        commandValue = value;
+        break;  
       case 'highlight':
         document.execCommand('backColor', false, '#FEF7CD');
         return;

@@ -13,9 +13,15 @@ interface TextEditorProps {
   initialContent: string;
   onChange: (content: string) => void;
   editorRef?: React.RefObject<HTMLDivElement>;
+  documentTitle?: string;
 }
 
-const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, editorRef }) => {
+const TextEditor: React.FC<TextEditorProps> = ({ 
+  initialContent, 
+  onChange, 
+  editorRef,
+  documentTitle = "Document" 
+}) => {
   const defaultEditorRef = useRef<HTMLDivElement>(null);
   const actualEditorRef = editorRef || defaultEditorRef;
   const [activeFormats, setActiveFormats] = useState<string[]>([]);
@@ -108,7 +114,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ initialContent, onChange, edito
         onFormatClick={operations.handleFormatClick} 
         activeFormats={activeFormats}
         documentContent={content}
-        documentTitle="Document"
+        documentTitle={documentTitle}
       >
         <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
       </FormatToolbar>
