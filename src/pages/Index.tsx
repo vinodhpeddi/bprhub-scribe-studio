@@ -88,6 +88,7 @@ const Index = () => {
               onChange={setDocumentContent}
               editorRef={editorRef}
               documentTitle={documentTitle}
+              onSave={handleSaveDocument}
             />
           </div>
           

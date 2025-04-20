@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -6,19 +5,23 @@ import EditorContent from './editor/EditorContent';
 import { useEditorOperations } from '../hooks/useEditorOperations';
 import MergeFieldsDropdown from './MergeFieldsDropdown';
 import { useEditorState } from '../hooks/useEditorState';
+import { useAutosave } from '../hooks/useAutosave';
+import { toast } from 'sonner';
 
 interface TextEditorProps {
   initialContent: string;
   onChange: (content: string) => void;
   editorRef?: React.RefObject<HTMLDivElement>;
   documentTitle?: string;
+  onSave?: () => void;
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({ 
   initialContent, 
   onChange, 
   editorRef,
-  documentTitle = "Document" 
+  documentTitle = "Document",
+  onSave 
 }) => {
   const defaultEditorRef = useRef<HTMLDivElement>(null);
   const actualEditorRef = editorRef || defaultEditorRef;
@@ -27,7 +30,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   
-  // Use the new hook for editor state management
   const { 
     content, 
     setContent, 
@@ -35,19 +37,15 @@ const TextEditor: React.FC<TextEditorProps> = ({
     setIsInitialized
   } = useEditorState(initialContent);
   
-  // Use memoized operations to prevent unnecessary re-renders
   const operations = useEditorOperations(onChange);
 
-  // Handle programmatic content updates
   useEffect(() => {
     if (isInitialized && initialContent !== content) {
-      // Update the content if it's changed externally
       setContent(initialContent);
     }
   }, [initialContent, isInitialized, content, setContent]);
 
   useEffect(() => {
-    // Handle Escape key to exit fullscreen
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullScreen) {
         setIsFullScreen(false);
@@ -59,6 +57,17 @@ const TextEditor: React.FC<TextEditorProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isFullScreen]);
+
+  useAutosave({
+    onSave: () => {
+      if (onSave) {
+        onSave();
+        toast.success('Document saved automatically');
+      }
+    },
+    enabled: !!onSave,
+    delay: 3000
+  });
 
   const updateActiveFormats = useCallback(() => {
     const formats: string[] = [];
@@ -89,7 +98,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
     if (actualEditorRef.current) {
       updateActiveFormats();
       
-      // Get content and propagate change
       const newContent = actualEditorRef.current.innerHTML;
       setContent(newContent);
       onChange(newContent);
@@ -122,7 +130,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
     setIsFullScreen(!isFullScreen);
   }, [isFullScreen]);
 
-  // Memoize toolbar to prevent re-renders
   const formatToolbar = useMemo(() => (
     <FormatToolbar 
       onFormatClick={operations.handleFormatClick} 
