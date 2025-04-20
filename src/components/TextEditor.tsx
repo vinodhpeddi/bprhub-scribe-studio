@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
 import EditorContent from './editor/EditorContent';
@@ -28,24 +28,25 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
   const [content, setContent] = useState(initialContent);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const isInitializedRef = useRef(false);
+  const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const operations = useEditorOperations(onChange);
 
+  // Initialize editor content only once
   useEffect(() => {
-    if (actualEditorRef.current) {
+    if (actualEditorRef.current && !isInitializedRef.current) {
       actualEditorRef.current.innerHTML = initialContent;
+      isInitializedRef.current = true;
       
       // Check if document has any headings, if not, insert a default one
       setTimeout(() => {
-        if (actualEditorRef.current) {
-          const headings = actualEditorRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-          if (headings.length === 0 && initialContent.trim() === '') {
-            operations.insertDefaultHeading();
-            if (actualEditorRef.current) {
-              const newContent = actualEditorRef.current.innerHTML;
-              setContent(newContent);
-              onChange(newContent);
-            }
+        if (actualEditorRef.current && actualEditorRef.current.innerHTML.trim() === '') {
+          operations.insertDefaultHeading();
+          if (actualEditorRef.current) {
+            const newContent = actualEditorRef.current.innerHTML;
+            setContent(newContent);
+            onChange(newContent);
           }
         }
       }, 100);
@@ -66,7 +67,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     };
   }, [isFullScreen]);
 
-  const updateActiveFormats = () => {
+  const updateActiveFormats = useCallback(() => {
     const formats: string[] = [];
     
     if (document.queryCommandState('bold')) formats.push('bold');
@@ -76,9 +77,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
     if (document.queryCommandState('insertOrderedList')) formats.push('orderedList');
     
     setActiveFormats(formats);
-  };
+  }, []);
 
-  const handleTableClick = (e: React.MouseEvent) => {
+  const handleTableClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const table = target.closest('table');
     
@@ -89,42 +90,50 @@ const TextEditor: React.FC<TextEditorProps> = ({
       setSelectedTable(null);
       setShowTableProperties(false);
     }
-  };
+  }, []);
 
-  const handleEditorInput = () => {
+  const handleEditorInput = useCallback(() => {
     if (actualEditorRef.current) {
       updateActiveFormats();
-      const newContent = actualEditorRef.current.innerHTML;
-      setContent(newContent);
-      onChange(newContent);
+      
+      // Debounce content updates to reduce re-renders
+      if (contentUpdateTimeoutRef.current) {
+        clearTimeout(contentUpdateTimeoutRef.current);
+      }
+      
+      contentUpdateTimeoutRef.current = setTimeout(() => {
+        const newContent = actualEditorRef.current?.innerHTML || '';
+        setContent(newContent);
+        onChange(newContent);
+      }, 300);
     }
-  };
+  }, [updateActiveFormats, onChange, actualEditorRef]);
 
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text');
     document.execCommand('insertHTML', false, text);
-  };
+  }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {
       e.preventDefault();
       operations.handleListIndent(!e.shiftKey);
     }
-  };
+  }, [operations]);
 
-  const handleInsertMergeField = (field: string) => {
+  const handleInsertMergeField = useCallback((field: string) => {
     document.execCommand('insertHTML', false, field);
     if (actualEditorRef.current) {
       const newContent = actualEditorRef.current.innerHTML;
       setContent(newContent);
       onChange(newContent);
     }
-  };
+  }, [onChange, actualEditorRef]);
 
-  const toggleFullScreen = () => {
+  const toggleFullScreen = useCallback(() => {
     setIsFullScreen(!isFullScreen);
-  };
+  }, [isFullScreen]);
 
   return (
     <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
