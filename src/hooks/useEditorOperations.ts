@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTableOperations } from './editor/useTableOperations';
 import { useListOperations } from './editor/useListOperations';
 import { useInsertOperations } from './editor/useInsertOperations';
@@ -20,13 +20,20 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
   const { insertChecklist, insertImage, insertDefaultHeading } = useInsertOperations();
   const { handleFormatClick } = useFormatOperations();
 
-  // We're returning a stable object structure to prevent unnecessary re-renders
-  return {
+  // Memoize the operations object to prevent unnecessary re-renders
+  return useMemo(() => ({
     insertTable,
     insertChecklist,
     insertImage,
     insertDefaultHeading,
     handleListIndent,
     handleFormatClick,
-  };
+  }), [
+    insertTable,
+    insertChecklist,
+    insertImage,
+    insertDefaultHeading,
+    handleListIndent,
+    handleFormatClick
+  ]);
 };

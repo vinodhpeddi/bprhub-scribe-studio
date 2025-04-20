@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, FileText, Copy, Save, Import, List, FileUp } from 'lucide-react';
@@ -30,8 +30,26 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const [localTitle, setLocalTitle] = useState(documentTitle);
 
-  const handleCopyAsText = () => {
+  // Use debounce for title changes to avoid excessive re-renders
+  const titleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setLocalTitle(newTitle);
+    
+    // Debounce the propagation to parent component
+    if (titleChangeTimeoutRef.current) {
+      clearTimeout(titleChangeTimeoutRef.current);
+    }
+    
+    titleChangeTimeoutRef.current = setTimeout(() => {
+      onTitleChange(newTitle);
+    }, 300);
+  }, [onTitleChange]);
+
+  const handleCopyAsText = useCallback(() => {
     try {
       // Create a new div element
       const tempElement = document.createElement('div');
@@ -47,33 +65,39 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
       console.error('Failed to copy content:', error);
       toast.error('Failed to copy content');
     }
-  };
+  }, [documentContent]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     onSave();
     toast.success('Document saved successfully');
-  };
+  }, [onSave]);
 
-  const handleImportComplete = (content: string) => {
+  const handleImportComplete = useCallback((content: string) => {
     onImport(content);
-  };
+  }, [onImport]);
 
-  const handleTitleFocus = () => {
+  const handleTitleFocus = useCallback(() => {
     if (titleInputRef.current) {
       titleInputRef.current.select();
     }
-  };
+  }, []);
+
+  // Update local title when prop changes
+  React.useEffect(() => {
+    setLocalTitle(documentTitle);
+  }, [documentTitle]);
 
   return (
     <div className="flex flex-col gap-4 mb-4">
       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
         <Input
           ref={titleInputRef}
-          value={documentTitle}
-          onChange={(e) => onTitleChange(e.target.value)}
+          value={localTitle}
+          onChange={handleTitleChange}
           className="text-xl font-semibold flex-grow"
           placeholder="Document Title"
           onFocus={handleTitleFocus}
+          onBlur={() => onTitleChange(localTitle)}
         />
         
         <div className="flex gap-2 ml-auto">
@@ -151,4 +175,5 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   );
 };
 
-export default EditorHeader;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(EditorHeader);

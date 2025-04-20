@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 
 interface EditorContentProps {
   editorRef: React.RefObject<HTMLDivElement>;
@@ -70,7 +70,8 @@ const EditorContent: React.FC<EditorContentProps> = ({
     const element = editorRef.current;
     
     const handleNativeClick = (e: MouseEvent) => {
-      e.stopPropagation(); // Prevent event bubbling
+      // Don't use stopPropagation as it can prevent React events
+      // We just want to ensure the native cursor positioning works correctly
       
       // This ensures that clicking in the editor works properly for cursor positioning
       try {
@@ -81,10 +82,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
             selection.removeAllRanges();
             selection.addRange(range);
             
-            // Ensure the editor maintains focus
-            if (editorRef.current) {
-              editorRef.current.focus();
-            }
+            // Don't programmatically set focus here, let the natural DOM focus occur
           }
         }
       } catch (err) {
@@ -92,12 +90,14 @@ const EditorContent: React.FC<EditorContentProps> = ({
       }
     };
     
-    element.addEventListener('click', handleNativeClick);
+    element.addEventListener('mousedown', handleNativeClick);
     hasSetupFocus.current = true;
     
     // Create mutation observer to detect DOM changes and restore selection
     const observer = new MutationObserver(() => {
-      restoreSelection();
+      if (document.activeElement === element) {
+        restoreSelection();
+      }
     });
     
     observer.observe(element, {
@@ -108,7 +108,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
     
     // Clean up the event listener and observer on unmount
     return () => {
-      element.removeEventListener('click', handleNativeClick);
+      element.removeEventListener('mousedown', handleNativeClick);
       observer.disconnect();
     };
   }, [editorRef]);
@@ -142,4 +142,5 @@ const EditorContent: React.FC<EditorContentProps> = ({
   );
 };
 
-export default EditorContent;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(EditorContent);

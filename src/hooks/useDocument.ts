@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   DocumentTemplate, 
@@ -17,6 +17,11 @@ export function useDocument() {
   const [documentContent, setDocumentContent] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
   const [currentDocument, setCurrentDocument] = useState<UserDocument | null>(null);
+  
+  // Use refs to track the previous values and detect actual changes
+  const previousTitleRef = useRef(documentTitle);
+  const previousContentRef = useRef(documentContent);
+  const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const existingDoc = location.state?.document;
@@ -25,13 +30,37 @@ export function useDocument() {
     }
   }, [location.state]);
 
-  const handleDocumentSelect = (document: UserDocument) => {
+  const handleDocumentSelect = useCallback((document: UserDocument) => {
     setCurrentDocument(document);
     setDocumentTitle(document.title);
+    previousTitleRef.current = document.title;
     setDocumentContent(document.content);
-  };
+    previousContentRef.current = document.content;
+  }, []);
 
-  const handleSaveDocument = () => {
+  // Debounced title change handler
+  const setDocumentTitleDebounced = useCallback((title: string) => {
+    if (title !== previousTitleRef.current) {
+      previousTitleRef.current = title;
+      setDocumentTitle(title);
+    }
+  }, []);
+
+  // Debounced content change handler
+  const setDocumentContentDebounced = useCallback((content: string) => {
+    if (contentUpdateTimeoutRef.current) {
+      clearTimeout(contentUpdateTimeoutRef.current);
+    }
+    
+    contentUpdateTimeoutRef.current = setTimeout(() => {
+      if (content !== previousContentRef.current) {
+        previousContentRef.current = content;
+        setDocumentContent(content);
+      }
+    }, 300);
+  }, []);
+
+  const handleSaveDocument = useCallback(() => {
     if (!currentDocument) {
       toast.error('No active document to save');
       return;
@@ -52,9 +81,9 @@ export function useDocument() {
       console.error('Error saving document:', error);
       toast.error('Failed to save document');
     }
-  };
+  }, [currentDocument, documentTitle, documentContent]);
 
-  const handleFinalizeDocument = () => {
+  const handleFinalizeDocument = useCallback(() => {
     if (!currentDocument) {
       toast.error('No active document to finalize');
       return;
@@ -65,9 +94,8 @@ export function useDocument() {
       return;
     }
     
-    const finalizedDoc = finalizeDraft(currentDocument);
-    
     try {
+      const finalizedDoc = finalizeDraft(currentDocument);
       saveDocument(finalizedDoc);
       setCurrentDocument(finalizedDoc);
       toast.success('Document finalized');
@@ -75,13 +103,13 @@ export function useDocument() {
       console.error('Error finalizing document:', error);
       toast.error('Failed to finalize document');
     }
-  };
+  }, [currentDocument]);
 
   return {
     documentTitle,
-    setDocumentTitle,
+    setDocumentTitle: setDocumentTitleDebounced,
     documentContent,
-    setDocumentContent,
+    setDocumentContent: setDocumentContentDebounced,
     currentDocument,
     handleSaveDocument,
     handleFinalizeDocument,

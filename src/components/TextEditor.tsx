@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
 import EditorContent from './editor/EditorContent';
@@ -26,32 +26,32 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [activeFormats, setActiveFormats] = useState<string[]>([]);
   const [showTableProperties, setShowTableProperties] = useState(false);
   const [selectedTable, setSelectedTable] = useState<HTMLTableElement | null>(null);
-  const [content, setContent] = useState(initialContent);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const isInitializedRef = useRef(false);
   const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastContentRef = useRef<string>(initialContent);
   
+  // Use memoized operations to prevent unnecessary re-renders
   const operations = useEditorOperations(onChange);
 
   // Initialize editor content only once
   useEffect(() => {
     if (actualEditorRef.current && !isInitializedRef.current) {
       actualEditorRef.current.innerHTML = initialContent;
+      lastContentRef.current = initialContent;
       isInitializedRef.current = true;
       
       // Check if document has any headings, if not, insert a default one
-      setTimeout(() => {
-        if (actualEditorRef.current && actualEditorRef.current.innerHTML.trim() === '') {
-          operations.insertDefaultHeading();
+      if (actualEditorRef.current.innerHTML.trim() === '') {
+        setTimeout(() => {
           if (actualEditorRef.current) {
-            const newContent = actualEditorRef.current.innerHTML;
-            setContent(newContent);
-            onChange(newContent);
+            operations.insertDefaultHeading();
+            // Don't update state here, let the normal input handler handle it
           }
-        }
-      }, 100);
+        }, 100);
+      }
     }
-  }, [initialContent, actualEditorRef, operations, onChange]);
+  }, [initialContent, actualEditorRef, operations]);
 
   useEffect(() => {
     // Handle Escape key to exit fullscreen
@@ -102,9 +102,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
       }
       
       contentUpdateTimeoutRef.current = setTimeout(() => {
-        const newContent = actualEditorRef.current?.innerHTML || '';
-        setContent(newContent);
-        onChange(newContent);
+        if (actualEditorRef.current) {
+          const newContent = actualEditorRef.current.innerHTML;
+          if (newContent !== lastContentRef.current) {
+            lastContentRef.current = newContent;
+            onChange(newContent);
+          }
+        }
       }, 300);
     }
   }, [updateActiveFormats, onChange, actualEditorRef]);
@@ -126,7 +130,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     document.execCommand('insertHTML', false, field);
     if (actualEditorRef.current) {
       const newContent = actualEditorRef.current.innerHTML;
-      setContent(newContent);
+      lastContentRef.current = newContent;
       onChange(newContent);
     }
   }, [onChange, actualEditorRef]);
@@ -135,19 +139,24 @@ const TextEditor: React.FC<TextEditorProps> = ({
     setIsFullScreen(!isFullScreen);
   }, [isFullScreen]);
 
+  // Memoize toolbar to prevent re-renders
+  const formatToolbar = useMemo(() => (
+    <FormatToolbar 
+      onFormatClick={operations.handleFormatClick} 
+      activeFormats={activeFormats}
+      documentContent={lastContentRef.current}
+      documentTitle={documentTitle}
+      onToggleFullScreen={toggleFullScreen}
+      isFullScreen={isFullScreen}
+    >
+      <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
+    </FormatToolbar>
+  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField]);
+
   return (
     <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
       <div className={`${isFullScreen ? 'container mx-auto max-w-6xl' : ''}`}>
-        <FormatToolbar 
-          onFormatClick={operations.handleFormatClick} 
-          activeFormats={activeFormats}
-          documentContent={content}
-          documentTitle={documentTitle}
-          onToggleFullScreen={toggleFullScreen}
-          isFullScreen={isFullScreen}
-        >
-          <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
-        </FormatToolbar>
+        {formatToolbar}
         
         {showTableProperties && selectedTable && (
           <TableProperties 
@@ -170,4 +179,4 @@ const TextEditor: React.FC<TextEditorProps> = ({
   );
 };
 
-export default TextEditor;
+export default React.memo(TextEditor);
