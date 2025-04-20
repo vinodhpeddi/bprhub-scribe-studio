@@ -16,32 +16,41 @@ const DocumentTitleInput: React.FC<DocumentTitleInputProps> = ({
   const cursorPositionRef = useRef<number | null>(null);
   const skipUpdateRef = useRef(false);
   const titleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isUserTypingRef = useRef(false);
 
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
-    setLocalTitle(newTitle);
+    isUserTypingRef.current = true;
     
-    // Save cursor position
+    // Store cursor position immediately
     if (titleInputRef.current) {
-      cursorPositionRef.current = titleInputRef.current.selectionStart;
+      cursorPositionRef.current = e.target.selectionStart;
     }
     
-    // Debounce the propagation to parent component
+    // Update local state immediately to prevent lag
+    setLocalTitle(newTitle);
+    
+    // Debounce the update to parent
     if (titleChangeTimeoutRef.current) {
       clearTimeout(titleChangeTimeoutRef.current);
     }
     
     titleChangeTimeoutRef.current = setTimeout(() => {
       onTitleChange(newTitle);
-    }, 300);
+      isUserTypingRef.current = false;
+    }, 500); // Increased debounce time to reduce updates
   }, [onTitleChange]);
 
-  // Restore cursor position after input update
+  // Restore cursor position with proper timing
   useEffect(() => {
-    if (titleInputRef.current && cursorPositionRef.current !== null) {
-      titleInputRef.current.selectionStart = cursorPositionRef.current;
-      titleInputRef.current.selectionEnd = cursorPositionRef.current;
-      cursorPositionRef.current = null;
+    if (titleInputRef.current && cursorPositionRef.current !== null && isUserTypingRef.current) {
+      const cursorPosition = cursorPositionRef.current;
+      requestAnimationFrame(() => {
+        if (titleInputRef.current) {
+          titleInputRef.current.selectionStart = cursorPosition;
+          titleInputRef.current.selectionEnd = cursorPosition;
+        }
+      });
     }
   }, [localTitle]);
 
@@ -52,7 +61,7 @@ const DocumentTitleInput: React.FC<DocumentTitleInputProps> = ({
       return;
     }
     
-    if (title !== localTitle) {
+    if (title !== localTitle && !isUserTypingRef.current) {
       setLocalTitle(title);
     }
   }, [title, localTitle]);
@@ -65,6 +74,7 @@ const DocumentTitleInput: React.FC<DocumentTitleInputProps> = ({
   
   const handleTitleBlur = useCallback(() => {
     skipUpdateRef.current = true;
+    isUserTypingRef.current = false;
     onTitleChange(localTitle);
   }, [localTitle, onTitleChange]);
 
