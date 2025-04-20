@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, memo } from 'react';
 
 interface EditorContentProps {
@@ -33,7 +32,6 @@ const EditorContent: React.FC<EditorContentProps> = ({
     endOffset?: number;
   } | null>(null);
 
-  // Initialize content only once on mount
   useEffect(() => {
     if (!isInitialized && editorRef.current) {
       editorRef.current.innerHTML = initialContent;
@@ -62,14 +60,12 @@ const EditorContent: React.FC<EditorContentProps> = ({
           const range = document.createRange();
           const selection = window.getSelection();
           
-          // Make sure the offset doesn't exceed the node length
           const safeOffset = Math.min(offset, node.nodeType === Node.TEXT_NODE ? 
             (node.textContent?.length || 0) : node.childNodes.length);
           
           range.setStart(node, safeOffset);
           
           if (endNode && endOffset !== undefined && editorRef.current.contains(endNode)) {
-            // Make sure the end offset doesn't exceed the end node length
             const safeEndOffset = Math.min(endOffset, endNode.nodeType === Node.TEXT_NODE ? 
               (endNode.textContent?.length || 0) : endNode.childNodes.length);
             
@@ -88,6 +84,28 @@ const EditorContent: React.FC<EditorContentProps> = ({
       }
     }
   };
+
+  const handleKeyboardShortcut = (e: KeyboardEvent) => {
+    if (!(e.target as HTMLElement).isContentEditable) return;
+
+    if (e.ctrlKey && e.key === 'c') {
+      e.preventDefault();
+      document.execCommand('copy');
+    } else if (e.ctrlKey && e.key === 'v') {
+      e.preventDefault();
+      document.execCommand('paste');
+    } else if (e.ctrlKey && e.key === 'x') {
+      e.preventDefault();
+      document.execCommand('cut');
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyboardShortcut);
+    return () => {
+      document.removeEventListener('keydown', handleKeyboardShortcut);
+    };
+  }, []);
 
   useEffect(() => {
     if (!editorRef.current) return;
