@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, memo } from 'react';
 
 interface EditorContentProps {
@@ -61,10 +62,18 @@ const EditorContent: React.FC<EditorContentProps> = ({
           const range = document.createRange();
           const selection = window.getSelection();
           
-          range.setStart(node, offset);
+          // Make sure the offset doesn't exceed the node length
+          const safeOffset = Math.min(offset, node.nodeType === Node.TEXT_NODE ? 
+            (node.textContent?.length || 0) : node.childNodes.length);
+          
+          range.setStart(node, safeOffset);
           
           if (endNode && endOffset !== undefined && editorRef.current.contains(endNode)) {
-            range.setEnd(endNode, endOffset);
+            // Make sure the end offset doesn't exceed the end node length
+            const safeEndOffset = Math.min(endOffset, endNode.nodeType === Node.TEXT_NODE ? 
+              (endNode.textContent?.length || 0) : endNode.childNodes.length);
+            
+            range.setEnd(endNode, safeEndOffset);
           } else {
             range.collapse(true);
           }
@@ -108,28 +117,6 @@ const EditorContent: React.FC<EditorContentProps> = ({
       observer.disconnect();
     };
   }, []);
-
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    saveSelection();
-    onInput();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    saveSelection();
-    onKeyDown(e);
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    requestAnimationFrame(() => {
-      saveSelection();
-    });
-    onClick(e);
-  };
-
-  const handleMouseUp = () => {
-    saveSelection();
-    onMouseUp();
-  };
 
   return (
     <div
