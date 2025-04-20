@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { TextFormatting } from './toolbar/TextFormatting';
 import { ListFormatting } from './toolbar/ListFormatting';
@@ -6,6 +5,7 @@ import { HeadingControls } from './toolbar/HeadingControls';
 import { InsertTools } from './toolbar/InsertTools';
 import { ExportTools } from './toolbar/ExportTools';
 import AIAssistantPanel from './AIAssistantPanel';
+import { toast } from 'sonner';
 
 interface FormatToolbarProps {
   onFormatClick: (formatType: string, value?: string) => void;

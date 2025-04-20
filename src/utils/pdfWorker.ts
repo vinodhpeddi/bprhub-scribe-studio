@@ -5,13 +5,9 @@ import * as pdfjs from 'pdfjs-dist';
 export function initPdfWorker() {
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     try {
-      // Instead of using CDN links which are failing, we'll use the fake worker
-      // This is more reliable for development environments where CDN access might be restricted
-      pdfjs.GlobalWorkerOptions.workerPort = new Worker(
-        new URL('pdfjs-dist/build/pdf.worker.js', import.meta.url)
-      );
-      
-      console.log('PDF.js worker initialized with local worker');
+      // Set the worker source using CDN
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      console.log('PDF.js worker initialized with CDN worker');
     } catch (error) {
       console.error('Error initializing PDF.js worker:', error);
       
