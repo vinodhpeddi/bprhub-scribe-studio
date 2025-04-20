@@ -108,20 +108,35 @@ const EditorContent: React.FC<EditorContentProps> = ({
     };
   }, []);
 
+  // Fix cursor positioning issues
+  const handleNativeInput = () => {
+    // Save the current selection immediately after input
+    saveSelection();
+    // Call the parent's onInput handler
+    onInput();
+  };
+
   useEffect(() => {
     if (!editorRef.current) return;
     
     const element = editorRef.current;
     
     const handleNativeClick = () => {
+      // Use requestAnimationFrame to ensure selection is saved after the browser has processed the click
       requestAnimationFrame(saveSelection);
     };
     
     element.addEventListener('mousedown', handleNativeClick);
     
+    // Modified mutation observer to prevent cursor movement issues
     const observer = new MutationObserver(() => {
       if (document.activeElement === element) {
-        restoreSelection();
+        // Only restore selection if content has actually been changed
+        if (lastSelectionRef.current) {
+          requestAnimationFrame(() => {
+            restoreSelection();
+          });
+        }
       }
     });
     
@@ -143,7 +158,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
       className="editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto"
       contentEditable={true}
       suppressContentEditableWarning={true}
-      onInput={onInput}
+      onInput={handleNativeInput} // Use our custom input handler
       onPaste={onPaste}
       onKeyUp={onKeyUp}
       onKeyDown={onKeyDown}
