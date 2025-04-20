@@ -14,6 +14,23 @@ interface HeadingControlsProps {
 }
 
 export const HeadingControls: React.FC<HeadingControlsProps> = ({ onFormatClick }) => {
+  const handleHeadingClick = (headingType: string) => {
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) {
+      // Save the selection range
+      const range = selection.getRangeAt(0);
+      
+      // Apply the heading format
+      onFormatClick('formatBlock', headingType);
+      
+      // Restore the selection after formatting
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      onFormatClick('formatBlock', headingType);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,16 +40,16 @@ export const HeadingControls: React.FC<HeadingControlsProps> = ({ onFormatClick 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => onFormatClick('formatBlock', 'h1')}>
+        <DropdownMenuItem onClick={() => handleHeadingClick('h1')}>
           <Heading1 size={16} className="mr-2" /> Heading 1
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onFormatClick('formatBlock', 'h2')}>
+        <DropdownMenuItem onClick={() => handleHeadingClick('h2')}>
           <Heading2 size={16} className="mr-2" /> Heading 2
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onFormatClick('formatBlock', 'h3')}>
+        <DropdownMenuItem onClick={() => handleHeadingClick('h3')}>
           <Heading3 size={16} className="mr-2" /> Heading 3
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onFormatClick('formatBlock', 'p')}>
+        <DropdownMenuItem onClick={() => handleHeadingClick('p')}>
           Normal Text
         </DropdownMenuItem>
       </DropdownMenuContent>
