@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Bold, 
@@ -121,7 +122,7 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
 
   return (
     <div 
-      className={`flex items-center border rounded-md p-1 bg-white z-10 transition-all duration-300 mb-2 gap-1 ${
+      className={`flex flex-wrap items-center border rounded-md p-1 bg-white z-10 transition-all duration-300 mb-2 gap-1 ${
         isSticky ? 'sticky top-0 shadow-md animate-slide-in' : ''
       }`}
     >
