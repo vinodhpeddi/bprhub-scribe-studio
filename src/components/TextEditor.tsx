@@ -32,18 +32,20 @@ const TextEditor: React.FC<TextEditorProps> = ({
   
   const { 
     content, 
-    setContent, 
+    setContent,
+    contentRef,
     isInitialized,
-    setIsInitialized
+    setIsInitialized,
+    skipNextUpdateRef
   } = useEditorState(initialContent);
   
   const operations = useEditorOperations(onChange);
 
   useEffect(() => {
-    if (isInitialized && initialContent !== content) {
+    if (isInitialized && initialContent !== contentRef.current) {
       setContent(initialContent);
     }
-  }, [initialContent, isInitialized, content, setContent]);
+  }, [initialContent, isInitialized]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -95,14 +97,15 @@ const TextEditor: React.FC<TextEditorProps> = ({
   }, []);
 
   const handleEditorInput = useCallback(() => {
-    if (actualEditorRef.current) {
-      updateActiveFormats();
-      
-      const newContent = actualEditorRef.current.innerHTML;
-      setContent(newContent);
-      onChange(newContent);
-    }
-  }, [updateActiveFormats, onChange, actualEditorRef, setContent]);
+    if (!actualEditorRef.current) return;
+    
+    updateActiveFormats();
+    skipNextUpdateRef.current = true;
+    
+    const newContent = actualEditorRef.current.innerHTML;
+    setContent(newContent);
+    onChange(newContent);
+  }, [updateActiveFormats, onChange, actualEditorRef, skipNextUpdateRef]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
@@ -134,14 +137,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
     <FormatToolbar 
       onFormatClick={operations.handleFormatClick} 
       activeFormats={activeFormats}
-      documentContent={content}
+      documentContent={contentRef.current}
       documentTitle={documentTitle}
       onToggleFullScreen={toggleFullScreen}
       isFullScreen={isFullScreen}
     >
       <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
     </FormatToolbar>
-  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField, content]);
+  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField]);
 
   return (
     <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>

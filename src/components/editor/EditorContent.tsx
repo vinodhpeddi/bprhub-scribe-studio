@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, memo } from 'react';
 
 interface EditorContentProps {
@@ -138,12 +137,12 @@ const EditorContent: React.FC<EditorContentProps> = ({
       className="editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto"
       contentEditable={true}
       suppressContentEditableWarning={true}
-      onInput={handleInput}
+      onInput={onInput}
       onPaste={onPaste}
       onKeyUp={onKeyUp}
-      onKeyDown={handleKeyDown}
-      onMouseUp={handleMouseUp}
-      onClick={handleClick}
+      onKeyDown={onKeyDown}
+      onMouseUp={onMouseUp}
+      onClick={onClick}
       spellCheck={true}
       style={{
         fontSize: '14px',
