@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface EditorContentProps {
   editorRef: React.RefObject<HTMLDivElement>;
@@ -20,6 +20,38 @@ const EditorContent: React.FC<EditorContentProps> = ({
   onMouseUp,
   onClick,
 }) => {
+  // Create a reference to track if we've set the content editable focus behavior
+  const hasSetupFocus = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!editorRef.current || hasSetupFocus.current) return;
+    
+    // Fix cursor position issue by adding a click listener directly to the DOM element
+    const element = editorRef.current;
+    const handleNativeClick = (e: MouseEvent) => {
+      // Prevent default only if needed to intercept native behavior
+      if (document.getSelection()?.isCollapsed) {
+        // This ensures that clicking in the editor works properly for cursor positioning
+        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        if (range) {
+          const selection = window.getSelection();
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+      }
+    };
+    
+    element.addEventListener('click', handleNativeClick);
+    hasSetupFocus.current = true;
+    
+    // Clean up the event listener on unmount
+    return () => {
+      element.removeEventListener('click', handleNativeClick);
+    };
+  }, [editorRef]);
+
   return (
     <div
       ref={editorRef}

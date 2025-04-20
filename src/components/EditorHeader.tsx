@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, FileText, Copy, Save, Import, List, FileUp } from 'lucide-react';
@@ -29,6 +29,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const handleCopyAsText = () => {
     try {
@@ -57,14 +58,22 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
     onImport(content);
   };
 
+  const handleTitleFocus = () => {
+    if (titleInputRef.current) {
+      titleInputRef.current.select();
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 mb-4">
       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
         <Input
+          ref={titleInputRef}
           value={documentTitle}
           onChange={(e) => onTitleChange(e.target.value)}
           className="text-xl font-semibold flex-grow"
           placeholder="Document Title"
+          onFocus={handleTitleFocus}
         />
         
         <div className="flex gap-2 ml-auto">
