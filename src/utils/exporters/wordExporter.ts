@@ -1,5 +1,5 @@
 
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType, AlignmentType, IUnderline } from 'docx';
 import { ExportOptions } from '../documentTypes';
 import { generateTableOfContents } from '../documentAnalysis';
 
@@ -58,8 +58,8 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
   }
   
   // Improved recursive function to process HTML nodes
-  function processNode(node) {
-    if (!node) return;
+  function processNode(node: Node): TextRun | null {
+    if (!node) return null;
     
     // Handle different node types
     switch (node.nodeType) {
@@ -74,7 +74,8 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
       
       case Node.ELEMENT_NODE:
         // Process different element types
-        const tagName = node.tagName.toLowerCase();
+        const element = node as HTMLElement;
+        const tagName = element.tagName.toLowerCase();
         
         // Handle headings
         if (tagName.match(/^h[1-6]$/)) {
@@ -89,7 +90,7 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
           }
           
           sections.push(new Paragraph({
-            text: node.textContent || '',
+            text: element.textContent || '',
             heading: headingLevel,
           }));
           return null;
@@ -97,14 +98,17 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
         
         // Handle paragraphs and divs
         if (tagName === 'p' || tagName === 'div') {
-          const children = Array.from(node.childNodes).map(processNode).filter(Boolean);
+          const children = Array.from(element.childNodes)
+            .map(childNode => processNode(childNode))
+            .filter(Boolean) as TextRun[];
+            
           if (children.length > 0) {
             sections.push(new Paragraph({
               children: children,
             }));
-          } else if (node.textContent && node.textContent.trim()) {
+          } else if (element.textContent && element.textContent.trim()) {
             sections.push(new Paragraph({
-              text: node.textContent,
+              text: element.textContent,
             }));
           }
           return null;
@@ -112,21 +116,23 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
         
         // Handle spans and inline formatting
         if (tagName === 'span' || tagName === 'strong' || tagName === 'em' || tagName === 'b' || tagName === 'i' || tagName === 'u') {
-          const isBold = tagName === 'strong' || tagName === 'b' || node.style.fontWeight === 'bold';
-          const isItalic = tagName === 'em' || tagName === 'i' || node.style.fontStyle === 'italic';
-          const isUnderline = tagName === 'u' || node.style.textDecoration === 'underline';
+          const isBold = tagName === 'strong' || tagName === 'b' || element.style.fontWeight === 'bold';
+          const isItalic = tagName === 'em' || tagName === 'i' || element.style.fontStyle === 'italic';
+          const isUnderline = tagName === 'u' || element.style.textDecoration === 'underline';
+          
+          const underlineType: IUnderline | undefined = isUnderline ? { type: 'single' } : undefined;
           
           return new TextRun({
-            text: node.textContent || '',
+            text: element.textContent || '',
             bold: isBold,
             italic: isItalic,
-            underline: isUnderline,
+            underline: underlineType,
           });
         }
         
         // Handle lists
         if (tagName === 'ul' || tagName === 'ol') {
-          const items = node.querySelectorAll('li');
+          const items = element.querySelectorAll('li');
           items.forEach((item, i) => {
             const prefix = tagName === 'ol' ? `${i+1}. ` : '• ';
             const itemText = prefix + (item.textContent || '');
@@ -142,7 +148,7 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
         // Handle tables
         if (tagName === 'table') {
           try {
-            const rows = node.querySelectorAll('tr');
+            const rows = element.querySelectorAll('tr');
             const tableRows = [];
             
             rows.forEach(row => {
@@ -165,9 +171,10 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
                         }));
                       }
                     } else if (childNode.nodeType === Node.ELEMENT_NODE) {
-                      if (childNode.tagName.toLowerCase() === 'p' || childNode.tagName.toLowerCase() === 'div') {
+                      const childElement = childNode as HTMLElement;
+                      if (childElement.tagName.toLowerCase() === 'p' || childElement.tagName.toLowerCase() === 'div') {
                         cellChildren.push(new Paragraph({
-                          text: childNode.textContent || ''
+                          text: childElement.textContent || ''
                         }));
                       }
                     }
@@ -216,7 +223,7 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
         // Handle images
         if (tagName === 'img') {
           try {
-            const altText = node.getAttribute('alt') || 'Image';
+            const altText = element.getAttribute('alt') || 'Image';
             sections.push(new Paragraph({
               text: `[${altText}]`,
               style: "Image",
@@ -228,8 +235,8 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
         }
         
         // Process child nodes for other elements
-        if (node.hasChildNodes()) {
-          Array.from(node.childNodes).forEach(childNode => {
+        if (element.hasChildNodes()) {
+          Array.from(element.childNodes).forEach(childNode => {
             processNode(childNode);
           });
         }

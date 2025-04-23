@@ -4,11 +4,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   DocumentTemplate, 
   UserDocument,
+} from '@/utils/documentTypes';
+import { 
   createNewDraft,
   saveDocument,
-  finalizeDraft
-} from '@/utils/editorUtils';
+  finalizeDraft,
+  getAllDocuments,
+  getDocumentById 
+} from '@/utils/documentStorage';
+import { templates } from '@/utils/documentTypes';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export function useDocument() {
   const location = useLocation();
@@ -28,8 +34,31 @@ export function useDocument() {
     const existingDoc = location.state?.document;
     if (existingDoc) {
       handleDocumentSelect(existingDoc);
+    } else {
+      // If no document is provided in location state, create a new document
+      initializeNewDocument();
     }
   }, [location.state]);
+
+  const initializeNewDocument = useCallback(() => {
+    // Get the default template (blank document)
+    const defaultTemplate = templates.find(t => t.id === 'blank') || templates[0];
+    
+    // Create a new draft document
+    const newDoc = createNewDraft(defaultTemplate, 'Untitled Document');
+    
+    // Set up the document in our state
+    setCurrentDocument(newDoc);
+    setDocumentTitle(newDoc.title);
+    titleRef.current = newDoc.title;
+    setDocumentContent(newDoc.content);
+    contentRef.current = newDoc.content;
+    
+    // Save the new document to storage right away
+    saveDocument(newDoc);
+    
+    return newDoc;
+  }, []);
 
   const handleDocumentSelect = useCallback((document: UserDocument) => {
     setCurrentDocument(document);
@@ -61,8 +90,10 @@ export function useDocument() {
   }, []);
 
   const handleSaveDocument = useCallback(() => {
+    // If we don't have a document, try to create one first
     if (!currentDocument) {
-      toast.error('No active document to save');
+      const newDoc = initializeNewDocument();
+      toast.success('New document created and saved');
       return;
     }
     
@@ -81,7 +112,7 @@ export function useDocument() {
       console.error('Error saving document:', error);
       toast.error('Failed to save document');
     }
-  }, [currentDocument]);
+  }, [currentDocument, initializeNewDocument]);
 
   const handleFinalizeDocument = useCallback(() => {
     if (!currentDocument) {
@@ -113,6 +144,7 @@ export function useDocument() {
     currentDocument,
     handleSaveDocument,
     handleFinalizeDocument,
-    handleDocumentSelect
+    handleDocumentSelect,
+    initializeNewDocument
   };
 }
