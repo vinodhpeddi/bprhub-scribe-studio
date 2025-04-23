@@ -1,24 +1,30 @@
 
 import React from 'react';
-import { Table, Check, Image, Highlighter, Pencil, MessageSquare, AlertTriangle, Shield, Info } from 'lucide-react';
+import { Table, LayoutGrid, Check, Image, Highlighter, Pencil, MessageSquare, AlertTriangle, Shield, Info } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 
 interface InsertToolsProps {
   onFormatClick: (formatType: string) => void;
+  onInsertTable: (isLayout?: boolean) => void;
+  onInsertImage: () => void;
 }
 
-export const InsertTools: React.FC<InsertToolsProps> = ({ onFormatClick }) => {
+export const InsertTools: React.FC<InsertToolsProps> = ({ 
+  onFormatClick,
+  onInsertTable,
+  onInsertImage
+}) => {
   return (
     <div className="flex items-center gap-1">
       <IconButton
         icon={<Table size={18} />}
         label="Insert Table"
-        onClick={() => onFormatClick('table')}
+        onClick={() => onInsertTable(false)}
       />
       <IconButton
-        icon={<Table size={18} />}
+        icon={<LayoutGrid size={18} />}
         label="Layout Table"
-        onClick={() => onFormatClick('layoutTable')}
+        onClick={() => onInsertTable(true)}
       />
       <IconButton
         icon={<Check size={18} />}
@@ -28,7 +34,7 @@ export const InsertTools: React.FC<InsertToolsProps> = ({ onFormatClick }) => {
       <IconButton
         icon={<Image size={18} />}
         label="Insert Image"
-        onClick={() => onFormatClick('image')}
+        onClick={onInsertImage}
       />
       <IconButton
         icon={<Highlighter size={18} />}

@@ -17,6 +17,10 @@ interface FormatToolbarProps {
   documentTitle: string;
   onToggleFullScreen: () => void;
   isFullScreen: boolean;
+  operations: {
+    insertTable: (isLayout?: boolean) => void;
+    insertImage: () => void;
+  };
   children?: React.ReactNode;
 }
 
@@ -27,6 +31,7 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
   documentTitle,
   onToggleFullScreen,
   isFullScreen,
+  operations,
   children
 }) => {
   const [isSticky, setIsSticky] = useState(false);
@@ -59,7 +64,11 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
       
       <div className="h-5 w-px bg-gray-200 mx-1" />
       
-      <InsertTools onFormatClick={onFormatClick} />
+      <InsertTools 
+        onFormatClick={onFormatClick} 
+        onInsertTable={operations.insertTable}
+        onInsertImage={operations.insertImage}
+      />
       
       <div className="h-5 w-px bg-gray-200 mx-1" />
       

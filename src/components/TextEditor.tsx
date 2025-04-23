@@ -141,6 +141,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
       documentTitle={documentTitle}
       onToggleFullScreen={toggleFullScreen}
       isFullScreen={isFullScreen}
+      operations={operations}
     >
       <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
     </FormatToolbar>
