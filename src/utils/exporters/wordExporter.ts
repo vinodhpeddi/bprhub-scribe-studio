@@ -1,5 +1,5 @@
 
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType, AlignmentType } from 'docx';
 import { ExportOptions } from '../documentTypes';
 import { generateTableOfContents } from '../documentAnalysis';
 
@@ -7,7 +7,8 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
   
-  let sections = [];
+  // Create an array to store document elements
+  const sections = [];
   
   // Add watermark if requested
   if (options.addWatermark) {
@@ -21,7 +22,7 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
             bold: true,
           }),
         ],
-        alignment: "center",
+        alignment: AlignmentType.CENTER,
       })
     );
   }
@@ -48,67 +49,212 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
     });
   }
   
-  // Process HTML content
-  const elements = Array.from(doc.body.children);
-  elements.forEach(element => {
-    if (element.tagName.toLowerCase().startsWith('h')) {
-      const level = parseInt(element.tagName.substring(1));
-      let headingLevel;
+  // Add title as heading if it doesn't already exist in the content
+  if (title && !doc.querySelector('h1')) {
+    sections.push(new Paragraph({
+      text: title,
+      heading: HeadingLevel.HEADING_1,
+    }));
+  }
+  
+  // Improved recursive function to process HTML nodes
+  function processNode(node) {
+    if (!node) return;
+    
+    // Handle different node types
+    switch (node.nodeType) {
+      case Node.TEXT_NODE:
+        // Only process text that has content (not just whitespace)
+        if (node.textContent && node.textContent.trim()) {
+          return new TextRun({
+            text: node.textContent,
+          });
+        }
+        return null;
       
-      switch(level) {
-        case 1: headingLevel = HeadingLevel.HEADING_1; break;
-        case 2: headingLevel = HeadingLevel.HEADING_2; break;
-        case 3: headingLevel = HeadingLevel.HEADING_3; break;
-        default: headingLevel = HeadingLevel.HEADING_4;
-      }
-      
-      sections.push(new Paragraph({
-        text: element.textContent || '',
-        heading: headingLevel,
-      }));
-    } else if (element.tagName.toLowerCase() === 'p') {
-      sections.push(new Paragraph({
-        text: element.textContent || '',
-      }));
-    } else if (element.tagName.toLowerCase() === 'ul' || element.tagName.toLowerCase() === 'ol') {
-      const items = element.querySelectorAll('li');
-      items.forEach((item, i) => {
-        const prefix = element.tagName.toLowerCase() === 'ol' ? `${i+1}. ` : '• ';
-        sections.push(new Paragraph({
-          text: prefix + (item.textContent || ''),
-          indent: { left: 240 },
-        }));
-      });
-    } else if (element.tagName.toLowerCase() === 'table') {
-      const rows = element.querySelectorAll('tr');
-      const tableRows = [];
-      
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        const tableCells = [];
+      case Node.ELEMENT_NODE:
+        // Process different element types
+        const tagName = node.tagName.toLowerCase();
         
-        cells.forEach(cell => {
-          tableCells.push(new TableCell({
-            children: [new Paragraph(cell.textContent || '')],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
-              bottom: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
-              left: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
-              right: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
-            }
+        // Handle headings
+        if (tagName.match(/^h[1-6]$/)) {
+          const level = parseInt(tagName.substring(1));
+          let headingLevel;
+          
+          switch(level) {
+            case 1: headingLevel = HeadingLevel.HEADING_1; break;
+            case 2: headingLevel = HeadingLevel.HEADING_2; break;
+            case 3: headingLevel = HeadingLevel.HEADING_3; break;
+            default: headingLevel = HeadingLevel.HEADING_4;
+          }
+          
+          sections.push(new Paragraph({
+            text: node.textContent || '',
+            heading: headingLevel,
           }));
-        });
+          return null;
+        }
         
-        tableRows.push(new TableRow({
-          children: tableCells,
-        }));
-      });
+        // Handle paragraphs and divs
+        if (tagName === 'p' || tagName === 'div') {
+          const children = Array.from(node.childNodes).map(processNode).filter(Boolean);
+          if (children.length > 0) {
+            sections.push(new Paragraph({
+              children: children,
+            }));
+          } else if (node.textContent && node.textContent.trim()) {
+            sections.push(new Paragraph({
+              text: node.textContent,
+            }));
+          }
+          return null;
+        }
+        
+        // Handle spans and inline formatting
+        if (tagName === 'span' || tagName === 'strong' || tagName === 'em' || tagName === 'b' || tagName === 'i' || tagName === 'u') {
+          const isBold = tagName === 'strong' || tagName === 'b' || node.style.fontWeight === 'bold';
+          const isItalic = tagName === 'em' || tagName === 'i' || node.style.fontStyle === 'italic';
+          const isUnderline = tagName === 'u' || node.style.textDecoration === 'underline';
+          
+          return new TextRun({
+            text: node.textContent || '',
+            bold: isBold,
+            italic: isItalic,
+            underline: isUnderline,
+          });
+        }
+        
+        // Handle lists
+        if (tagName === 'ul' || tagName === 'ol') {
+          const items = node.querySelectorAll('li');
+          items.forEach((item, i) => {
+            const prefix = tagName === 'ol' ? `${i+1}. ` : '• ';
+            const itemText = prefix + (item.textContent || '');
+            
+            sections.push(new Paragraph({
+              text: itemText,
+              indent: { left: 240 },
+            }));
+          });
+          return null;
+        }
+        
+        // Handle tables
+        if (tagName === 'table') {
+          try {
+            const rows = node.querySelectorAll('tr');
+            const tableRows = [];
+            
+            rows.forEach(row => {
+              const cells = row.querySelectorAll('th, td');
+              if (cells.length === 0) return;
+              
+              const tableCells = [];
+              
+              cells.forEach(cell => {
+                const cellChildren = [];
+                
+                // Process cell content
+                if (cell.hasChildNodes()) {
+                  // If cell has formatted content, process it
+                  Array.from(cell.childNodes).forEach(childNode => {
+                    if (childNode.nodeType === Node.TEXT_NODE) {
+                      if (childNode.textContent && childNode.textContent.trim()) {
+                        cellChildren.push(new Paragraph({
+                          text: childNode.textContent
+                        }));
+                      }
+                    } else if (childNode.nodeType === Node.ELEMENT_NODE) {
+                      if (childNode.tagName.toLowerCase() === 'p' || childNode.tagName.toLowerCase() === 'div') {
+                        cellChildren.push(new Paragraph({
+                          text: childNode.textContent || ''
+                        }));
+                      }
+                    }
+                  });
+                }
+                
+                // If no children were processed but cell has text, add it
+                if (cellChildren.length === 0 && cell.textContent) {
+                  cellChildren.push(new Paragraph(cell.textContent));
+                }
+                
+                tableCells.push(new TableCell({
+                  children: cellChildren.length > 0 ? cellChildren : [new Paragraph("")],
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
+                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
+                    left: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
+                    right: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
+                  }
+                }));
+              });
+              
+              if (tableCells.length > 0) {
+                tableRows.push(new TableRow({
+                  children: tableCells,
+                }));
+              }
+            });
+            
+            if (tableRows.length > 0) {
+              sections.push(new Table({
+                rows: tableRows,
+              }));
+            }
+          } catch (error) {
+            console.error("Error processing table in Word export:", error);
+            // Add a fallback paragraph to show something instead of crashing
+            sections.push(new Paragraph({
+              text: "[Table content could not be processed]",
+              style: "Warning",
+            }));
+          }
+          return null;
+        }
+        
+        // Handle images
+        if (tagName === 'img') {
+          try {
+            const altText = node.getAttribute('alt') || 'Image';
+            sections.push(new Paragraph({
+              text: `[${altText}]`,
+              style: "Image",
+            }));
+          } catch (error) {
+            console.error("Error processing image in Word export:", error);
+          }
+          return null;
+        }
+        
+        // Process child nodes for other elements
+        if (node.hasChildNodes()) {
+          Array.from(node.childNodes).forEach(childNode => {
+            processNode(childNode);
+          });
+        }
+        return null;
       
-      sections.push(new Table({
-        rows: tableRows,
-      }));
+      default:
+        return null;
     }
+  }
+  
+  // Process all elements in the body
+  Array.from(doc.body.childNodes).forEach(node => {
+    processNode(node);
   });
+  
+  // If no content was processed, add a default paragraph
+  if (sections.length === 0) {
+    sections.push(new Paragraph({
+      text: title || "Document",
+      heading: HeadingLevel.HEADING_1,
+    }));
+    sections.push(new Paragraph({
+      text: "No content available.",
+    }));
+  }
 
   const docWithContent = new Document({
     title: title,
