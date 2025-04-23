@@ -1,17 +1,16 @@
 
 import * as pdfjs from 'pdfjs-dist';
+// @ts-ignore
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 // Initialize PDF.js worker
 export function initPdfWorker() {
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     try {
-      // Use CDN hosted worker instead of local one
-      const workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.1.91/pdf.worker.min.js';
-      pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-      console.log('PDF.js worker initialized with CDN worker');
+      pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+      console.log('PDF.js worker initialized with local worker');
     } catch (error) {
       console.error('Error initializing PDF.js worker:', error);
-      
       // Fall back to using the fake worker as a last resort
       (window as any).pdfjsWorker = {};
       console.warn('Using PDF.js fake worker as fallback');
