@@ -1,5 +1,5 @@
 
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType, AlignmentType, IUnderline } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, SectionType, AlignmentType, UnderlineType } from 'docx';
 import { ExportOptions } from '../documentTypes';
 import { generateTableOfContents } from '../documentAnalysis';
 
@@ -120,13 +120,11 @@ export async function htmlToDocx(content: string, options: ExportOptions, title:
           const isItalic = tagName === 'em' || tagName === 'i' || element.style.fontStyle === 'italic';
           const isUnderline = tagName === 'u' || element.style.textDecoration === 'underline';
           
-          const underlineType: IUnderline | undefined = isUnderline ? { type: 'single' } : undefined;
-          
           return new TextRun({
             text: element.textContent || '',
             bold: isBold,
-            italic: isItalic,
-            underline: underlineType,
+            italics: isItalic, // Fixed: 'italic' -> 'italics'
+            underline: isUnderline ? { type: UnderlineType.SINGLE } : undefined, // Fixed: Using UnderlineType instead of IUnderline
           });
         }
         

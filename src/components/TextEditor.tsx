@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -109,9 +110,35 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
-    const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text');
-    document.execCommand('insertHTML', false, text);
-  }, []);
+    
+    // Try to get HTML content first for rich formatting
+    let content = '';
+    if (e.clipboardData.types.includes('text/html')) {
+      content = e.clipboardData.getData('text/html');
+      
+      // Create a temporary div to clean the pasted HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      // Remove potentially harmful scripts
+      const scripts = tempDiv.querySelectorAll('script, style');
+      scripts.forEach(script => script.remove());
+      
+      // Insert the cleaned HTML
+      document.execCommand('insertHTML', false, tempDiv.innerHTML);
+    } else if (e.clipboardData.types.includes('text/plain')) {
+      // Fall back to plain text
+      content = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, content);
+    }
+    
+    // Update the editor state
+    if (actualEditorRef.current) {
+      const newContent = actualEditorRef.current.innerHTML;
+      setContent(newContent);
+      onChange(newContent);
+    }
+  }, [onChange, actualEditorRef, setContent]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {

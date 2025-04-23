@@ -94,7 +94,7 @@ export function useDocument() {
     if (!currentDocument) {
       const newDoc = initializeNewDocument();
       toast.success('New document created and saved');
-      return;
+      return newDoc; // Return the new document
     }
     
     const updatedDoc: UserDocument = {
@@ -108,15 +108,29 @@ export function useDocument() {
       saveDocument(updatedDoc);
       setCurrentDocument(updatedDoc);
       toast.success('Document saved successfully');
+      return updatedDoc; // Return the updated document
     } catch (error) {
       console.error('Error saving document:', error);
       toast.error('Failed to save document');
+      return currentDocument; // Return the current document in case of error
     }
   }, [currentDocument, initializeNewDocument]);
 
   const handleFinalizeDocument = useCallback(() => {
     if (!currentDocument) {
-      toast.error('No active document to finalize');
+      const newDoc = initializeNewDocument();
+      toast.info('Created a new document before finalizing');
+      
+      // We need to wait for the next tick to ensure the document is saved
+      setTimeout(() => {
+        if (newDoc) {
+          const finalizedDoc = finalizeDraft(newDoc);
+          saveDocument(finalizedDoc);
+          setCurrentDocument(finalizedDoc);
+          toast.success('Document finalized');
+        }
+      }, 100);
+      
       return;
     }
     
@@ -134,7 +148,7 @@ export function useDocument() {
       console.error('Error finalizing document:', error);
       toast.error('Failed to finalize document');
     }
-  }, [currentDocument]);
+  }, [currentDocument, initializeNewDocument]);
 
   return {
     documentTitle,
