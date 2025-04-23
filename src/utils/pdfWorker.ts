@@ -1,14 +1,14 @@
 
 import * as pdfjs from 'pdfjs-dist';
-// @ts-ignore
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 // Initialize PDF.js worker
 export function initPdfWorker() {
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     try {
-      pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-      console.log('PDF.js worker initialized with local worker');
+      // In Vite, we need to use a CDN or set the worker source correctly
+      // The worker entry point doesn't resolve correctly as an import
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      console.log(`PDF.js worker initialized with CDN worker (version ${pdfjs.version})`);
     } catch (error) {
       console.error('Error initializing PDF.js worker:', error);
       // Fall back to using the fake worker as a last resort
