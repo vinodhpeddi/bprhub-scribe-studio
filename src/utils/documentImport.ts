@@ -1,3 +1,4 @@
+
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { initPdfWorker, validatePdfWorker } from './pdfWorker';
@@ -16,7 +17,7 @@ export async function importDocument(file: File): Promise<string> {
         // Validate PDF worker is available
         const isWorkerValid = await validatePdfWorker();
         if (!isWorkerValid) {
-          throw new Error('PDF.js worker failed to initialize properly');
+          console.warn('PDF.js worker not validated, attempting import anyway');
         }
         
         const arrayBuffer = await file.arrayBuffer();
@@ -40,9 +41,21 @@ export async function importDocument(file: File): Promise<string> {
         
     } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
                fileType === 'application/msword') {
-      const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.convertToHtml({ arrayBuffer });
-      content = result.value;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        content = result.value;
+        
+        // Ensure the content is wrapped in appropriate HTML tags if not already
+        if (!content.includes('<h1>') && !content.includes('<h2>')) {
+          content = `<h1>${file.name.replace(/\.(docx|doc)$/, '')}</h1>` + content;
+        }
+        
+        console.log('Word import successful:', { contentLength: content.length });
+      } catch (wordError) {
+        console.error('Word processing error:', wordError);
+        throw new Error(`Failed to process Word document: ${wordError.message}`);
+      }
       
     } else if (fileType === 'text/html' || fileType === 'application/xhtml+xml') {
       const text = await file.text();
@@ -58,6 +71,10 @@ export async function importDocument(file: File): Promise<string> {
         
     } else {
       throw new Error(`Unsupported file type: ${fileType}`);
+    }
+    
+    if (!content.trim()) {
+      throw new Error('Imported document contains no content');
     }
     
     return content;

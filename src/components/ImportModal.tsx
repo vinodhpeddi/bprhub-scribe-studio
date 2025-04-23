@@ -54,6 +54,11 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImportComp
     try {
       setIsUploading(true);
       const content = await importDocument(selectedFile);
+      
+      if (!content || content.trim() === '') {
+        throw new Error('Imported document contains no content');
+      }
+      
       onImportComplete(content);
       onClose();
       toast.success('Document imported successfully');
@@ -97,6 +102,22 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImportComp
     }
   };
 
+  // Function to handle file drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFile(e.dataTransfer.files[0]);
+      setImportError(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -112,6 +133,8 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImportComp
             <div 
               className="border-2 border-dashed rounded-lg p-10 text-center hover:bg-gray-50 cursor-pointer transition-colors"
               onClick={handleBrowseClick}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
             >
               <input
                 type="file"
