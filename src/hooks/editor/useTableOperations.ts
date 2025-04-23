@@ -6,7 +6,8 @@ export const useTableOperations = () => {
     if (editable) {
       // Focus the editor if it's not already focused
       if (document.activeElement !== editable) {
-        editable.focus();
+        // Cast to HTMLElement to access focus method
+        (editable as HTMLElement).focus();
       }
       
       // Create the table HTML
