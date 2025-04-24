@@ -1,58 +1,23 @@
-import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun, Table, ImageRun } from 'docx';
+
+import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 import { ExportOptions } from '../documentTypes';
-import { saveAs } from 'file-saver';
-import { htmlToStandaloneHtml } from './htmlExporter';
 import { generateTableOfContents } from '../documentAnalysis';
 import { processNodeToDocx } from './docxHelpers';
 
 export async function htmlToDocxConverter(content: string, options: ExportOptions, title: string): Promise<Blob> {
-  // First convert to standalone HTML with all styles
-  const htmlBlob = htmlToStandaloneHtml(content, options, title);
-  
-  // Convert HTML Blob to text
-  const htmlText = await htmlBlob.text();
-  
-  // Create FormData
-  const formData = new FormData();
-  formData.append('htmlContent', htmlText);
-  
-  try {
-    // Using CloudConvert's API (you'll need to implement your own server endpoint)
-    // For now, we'll use a mock online converter service
-    const response = await fetch('YOUR_SERVER_ENDPOINT/convert-html-to-docx', {
-      method: 'POST',
-      body: formData
-    });
-    
-    if (!response.ok) {
-      throw new Error('Conversion failed');
-    }
-    
-    const docxBlob = await response.blob();
-    return docxBlob;
-    
-  } catch (error) {
-    console.error('HTML to DOCX conversion failed:', error);
-    // Fallback to previous conversion method if online conversion fails
-    return fallbackConversion(content, options, title);
-  }
-}
-
-// Fallback to our previous conversion method if online conversion fails
-async function fallbackConversion(content: string, options: ExportOptions, title: string): Promise<Blob> {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
 
   const sections: any[] = [];
 
-  // Add watermark if needed - improved transparency and positioning
+  // Add watermark if needed
   if (options.addWatermark) {
     sections.push(
       new Paragraph({
         children: [
           new TextRun({
             text: "DRAFT - DO NOT USE",
-            color: "D3D3D3", // Light gray for transparency effect
+            color: "D3D3D3",
             size: 72,
             bold: true,
           }),
@@ -60,8 +25,6 @@ async function fallbackConversion(content: string, options: ExportOptions, title
         alignment: AlignmentType.CENTER,
       })
     );
-    
-    // Add spacing after watermark
     sections.push(new Paragraph({ text: "" }));
   }
 
@@ -69,11 +32,10 @@ async function fallbackConversion(content: string, options: ExportOptions, title
   if (options.includeToc) {
     const tocContent = generateTableOfContents(content);
     const tocDoc = parser.parseFromString(tocContent, 'text/html');
-    const tocHeading = new Paragraph({
+    sections.push(new Paragraph({
       text: "Table of Contents",
       heading: HeadingLevel.HEADING_1,
-    });
-    sections.push(tocHeading);
+    }));
 
     const tocEntries = tocDoc.querySelectorAll('p');
     tocEntries.forEach(entry => {
@@ -85,12 +47,11 @@ async function fallbackConversion(content: string, options: ExportOptions, title
       }));
     });
     
-    // Add a separator after TOC
     sections.push(new Paragraph({ text: "" }));
     sections.push(new Paragraph({ text: "" }));
   }
 
-  // Add title as heading if missing
+  // Add title
   if (title && !doc.querySelector('h1')) {
     sections.push(new Paragraph({
       text: title,
@@ -98,28 +59,12 @@ async function fallbackConversion(content: string, options: ExportOptions, title
     }));
   }
 
-  console.log('Processing HTML document for Word export');
-  
-  // Iterate through HTML body child nodes and process them recursively
+  // Process all content preserving structure
   Array.from(doc.body.childNodes).forEach(node => {
     processNodeToDocx(node, sections);
   });
 
-  // Add default content if nothing was processed
-  if (sections.length === 0) {
-    sections.push(new Paragraph({
-      text: title || "Document",
-      heading: HeadingLevel.HEADING_1,
-    }));
-    sections.push(new Paragraph({
-      text: "No content available.",
-    }));
-  }
-  
-  console.log(`Generated ${sections.length} sections for Word document`);
-  console.log(`Tables: ${sections.filter(section => section instanceof Table).length}`);
-
-  // Create a new document with all the processed content
+  // Create document with proper styling
   const docWithContent = new Document({
     title: title,
     description: "Document created with Scribe Studio",
@@ -134,15 +79,34 @@ async function fallbackConversion(content: string, options: ExportOptions, title
     styles: {
       paragraphStyles: [
         {
-          id: "Image",
-          name: "Image",
+          id: "Normal",
+          name: "Normal",
+          run: {
+            size: 24,
+          },
+        },
+        {
+          id: "Heading1",
+          name: "Heading 1",
+          basedOn: "Normal",
+          next: "Normal",
+          run: {
+            size: 36,
+            bold: true,
+          },
+        },
+        {
+          id: "TableCell",
+          name: "Table Cell",
           basedOn: "Normal",
           run: {
-            italics: true,
-            color: "808080",
+            size: 24,
           },
           paragraph: {
-            alignment: AlignmentType.CENTER,
+            spacing: {
+              before: 100,
+              after: 100,
+            },
           },
         },
       ],
