@@ -4,15 +4,17 @@ import { TextRun, UnderlineType } from 'docx';
 export const processTextFormat = (element: HTMLElement): TextRun | null => {
   if (!element.textContent?.trim()) return null;
 
+  // Extract styling properties
   const isBold = element.tagName === 'STRONG' || element.tagName === 'B' || 
-                 (element instanceof HTMLElement && element.style.fontWeight === 'bold');
+                 element.style.fontWeight === 'bold' || element.style.fontWeight === '700';
   const isItalic = element.tagName === 'EM' || element.tagName === 'I' || 
-                   (element instanceof HTMLElement && element.style.fontStyle === 'italic');
+                   element.style.fontStyle === 'italic';
   const isUnderline = element.tagName === 'U' || 
-                      (element instanceof HTMLElement && element.style.textDecoration === 'underline');
+                      element.style.textDecoration?.includes('underline');
   
+  // Handle text color with improved RGB conversion
   let color;
-  if (element instanceof HTMLElement && element.style.color) {
+  if (element.style.color) {
     if (element.style.color.startsWith('rgb')) {
       const rgb = element.style.color.match(/\d+/g);
       if (rgb && rgb.length >= 3) {
@@ -26,11 +28,31 @@ export const processTextFormat = (element: HTMLElement): TextRun | null => {
     }
   }
 
+  // Handle highlight/background color
+  let highlight;
+  if (element.style.backgroundColor) {
+    // Note: docx has limited highlight colors, so this is approximate
+    highlight = element.style.backgroundColor;
+  }
+
+  // Handle font size
+  let size;
+  if (element.style.fontSize) {
+    // Convert from px to half-points (Word uses half-points)
+    const match = element.style.fontSize.match(/(\d+)px/);
+    if (match && match[1]) {
+      size = parseInt(match[1], 10) * 2; // Multiply by 2 to convert to half-points
+    }
+  }
+
+  // Create TextRun with extracted styles
   return new TextRun({
     text: element.textContent || '',
     bold: isBold,
     italics: isItalic,
     underline: isUnderline ? { type: UnderlineType.SINGLE } : undefined,
     color: color,
+    highlight: highlight,
+    size: size,
   });
 };

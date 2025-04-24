@@ -2,6 +2,7 @@
 import React, { useEffect, memo } from 'react';
 import { usePasteHandler } from '@/hooks/editor/usePasteHandler';
 import { useEditorSelection } from '@/hooks/editor/useEditorSelection';
+import { useImageHandler } from '@/hooks/editor/useImageHandler';
 
 interface EditableContentProps {
   editorRef: React.RefObject<HTMLDivElement>;
@@ -32,6 +33,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
 }) => {
   const { handlePaste } = usePasteHandler({ editorRef, onChange, setContent });
   const { saveSelection, restoreSelection } = useEditorSelection();
+  const { handleImageDrop, setupDragAndDrop } = useImageHandler({ editorRef, onChange });
 
   useEffect(() => {
     if (!isInitialized && editorRef.current) {
@@ -39,6 +41,11 @@ const EditableContent: React.FC<EditableContentProps> = ({
       setIsInitialized(true);
     }
   }, [initialContent, isInitialized, setIsInitialized, editorRef]);
+
+  // Set up drag and drop for images
+  useEffect(() => {
+    return setupDragAndDrop();
+  }, [setupDragAndDrop]);
 
   // Handle user input with better cursor position retention
   const handleUserInput = (e: React.FormEvent) => {
@@ -100,12 +107,15 @@ const EditableContent: React.FC<EditableContentProps> = ({
       onKeyDown={onKeyDown}
       onMouseUp={onMouseUp}
       onClick={onClick}
+      onDrop={handleImageDrop}
       spellCheck={true}
       style={{
         fontSize: '14px',
         lineHeight: '1.6',
         fontFamily: 'Arial, sans-serif',
-        minHeight: '50vh'
+        minHeight: '50vh',
+        maxHeight: '70vh',
+        overflowY: 'auto'
       }}
     />
   );

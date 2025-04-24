@@ -1,5 +1,5 @@
 
-import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun, Table } from 'docx';
+import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun, Table, ImageRun } from 'docx';
 import { ExportOptions } from '../documentTypes';
 import { generateTableOfContents } from '../documentAnalysis';
 import { processNodeToDocx } from './docxHelpers';
@@ -83,10 +83,11 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
       text: "No content available.",
     }));
   }
-
+  
   console.log(`Generated ${sections.length} sections for Word document`);
   console.log(`Tables: ${sections.filter(section => section instanceof Table).length}`);
 
+  // Create a new document with all the processed content
   const docWithContent = new Document({
     title: title,
     description: "Document created with Scribe Studio",
@@ -97,7 +98,23 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
         },
         children: sections
       }
-    ]
+    ],
+    styles: {
+      paragraphStyles: [
+        {
+          id: "Image",
+          name: "Image",
+          basedOn: "Normal",
+          run: {
+            italics: true,
+            color: "808080",
+          },
+          paragraph: {
+            alignment: AlignmentType.CENTER,
+          },
+        },
+      ],
+    },
   });
 
   return await Packer.toBlob(docWithContent);

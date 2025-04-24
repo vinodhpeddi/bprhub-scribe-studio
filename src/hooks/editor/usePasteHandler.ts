@@ -48,24 +48,45 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
       // Process all elements to ensure proper attributes
       const elements = tempDiv.getElementsByTagName('*');
       for (let i = 0; i < elements.length; i++) {
-        const element = elements[i] as HTMLElement;
+        const element = elements[i];
         
-        // Remove unwanted attributes but keep styling
-        Array.from(element.attributes).forEach(attr => {
-          if (attr.name.startsWith('xmlns:') || 
-              attr.name.includes('mso-') || 
-              attr.name.startsWith('o:') ||
-              attr.name.startsWith('v:')) {
-            element.removeAttribute(attr.name);
-          }
-        });
+        // We need to safely check and cast to HTMLElement
+        if (element instanceof HTMLElement) {
+          // Remove unwanted attributes but keep styling
+          Array.from(element.attributes).forEach(attr => {
+            if (attr.name.startsWith('xmlns:') || 
+                attr.name.includes('mso-') || 
+                attr.name.startsWith('o:') ||
+                attr.name.startsWith('v:')) {
+              element.removeAttribute(attr.name);
+            }
+          });
 
-        // Keep specific styles for tables
-        if (element.tagName === 'TABLE') {
-          element.setAttribute('style', 'border-collapse: collapse; width: 100%; margin: 10px 0;');
-        }
-        if (element.tagName === 'TD' || element.tagName === 'TH') {
-          element.setAttribute('style', 'border: 1px solid #ddd; padding: 8px;');
+          // Keep specific styles for tables
+          if (element.tagName === 'TABLE') {
+            element.setAttribute('style', 'border-collapse: collapse; width: 100%; margin: 10px 0;');
+            // Preserve class for layout tables if it exists
+            if (element.className.includes('layout')) {
+              element.classList.add('layout-table');
+            }
+          }
+          if (element.tagName === 'TD' || element.tagName === 'TH') {
+            // Preserve cell styling but ensure basic styling exists
+            const currentStyle = element.getAttribute('style') || '';
+            if (!currentStyle.includes('border:')) {
+              element.setAttribute('style', currentStyle + 'border: 1px solid #ddd; padding: 8px;');
+            }
+          }
+          
+          // Preserve span styling for colored text
+          if (element.tagName === 'SPAN' && element.style.color) {
+            // Ensure the color style is preserved
+            const colorStyle = `color: ${element.style.color};`;
+            const currentStyle = element.getAttribute('style') || '';
+            if (!currentStyle.includes('color:')) {
+              element.setAttribute('style', currentStyle + colorStyle);
+            }
+          }
         }
       }
       

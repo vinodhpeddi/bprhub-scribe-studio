@@ -29,16 +29,30 @@ export function processNodeToDocx(node: Node, sections: any[]) {
 
       // Handle paragraphs and divs
       if (tagName === 'p' || tagName === 'div') {
+        // Get inline styles
+        const textAlign = element.style?.textAlign;
+        
         const children = Array.from(element.childNodes)
           .map(childNode => processNodeToDocx(childNode, []))
           .filter(Boolean) as TextRun[];
 
         if (children.length > 0) {
-          sections.push(new Paragraph({ children }));
+          sections.push(new Paragraph({ 
+            children,
+            alignment: textAlign === 'center' ? 'center' : 
+                       textAlign === 'right' ? 'right' : 
+                       textAlign === 'justify' ? 'justified' : 'left'
+          }));
         } else if (element.textContent?.trim()) {
           sections.push(new Paragraph({
             text: element.textContent,
+            alignment: textAlign === 'center' ? 'center' : 
+                       textAlign === 'right' ? 'right' : 
+                       textAlign === 'justify' ? 'justified' : 'left'
           }));
+        } else {
+          // Empty paragraph
+          sections.push(new Paragraph({ text: "" }));
         }
         return null;
       }
@@ -61,13 +75,31 @@ export function processNodeToDocx(node: Node, sections: any[]) {
         return null;
       }
 
-      // Handle images (placeholder)
+      // Handle images with better support
       if (tagName === 'img') {
-        const altText = element.getAttribute('alt') || 'Image';
-        sections.push(new Paragraph({
-          text: `[${altText}]`,
-        }));
+        try {
+          const altText = element.getAttribute('alt') || 'Image';
+          const src = element.getAttribute('src');
+          
+          // For now we'll add a placeholder, as image handling requires more complex logic
+          // Full image support would need to fetch the image from src and embed it
+          sections.push(new Paragraph({
+            text: `[${altText}]`,
+            style: "Image"
+          }));
+        } catch (error) {
+          console.error('Failed to process image:', error);
+          sections.push(new Paragraph({ text: "[Image]" }));
+        }
         return null;
+      }
+
+      // Handle line breaks
+      if (tagName === 'br') {
+        return new TextRun({
+          text: "",
+          break: 1
+        });
       }
 
       // Process children for other elements
