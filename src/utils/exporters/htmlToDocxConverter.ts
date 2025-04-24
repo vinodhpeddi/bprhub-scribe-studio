@@ -1,5 +1,5 @@
 
-import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun } from 'docx';
+import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun, Table } from 'docx';
 import { ExportOptions } from '../documentTypes';
 import { generateTableOfContents } from '../documentAnalysis';
 import { processNodeToDocx } from './docxHelpers';
@@ -49,6 +49,10 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
         indent: { left: indent * 240 },
       }));
     });
+    
+    // Add a separator after TOC
+    sections.push(new Paragraph({ text: "" }));
+    sections.push(new Paragraph({ text: "" }));
   }
 
   // Add title as heading if missing
@@ -59,6 +63,8 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
     }));
   }
 
+  console.log('Processing HTML document for Word export');
+  
   // Iterate through HTML body child nodes and process them recursively
   Array.from(doc.body.childNodes).forEach(node => {
     processNodeToDocx(node, sections);
@@ -75,9 +81,12 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
     }));
   }
 
+  console.log(`Generated ${sections.length} sections for Word document`);
+  console.log(`Tables: ${sections.filter(section => section instanceof Table).length}`);
+
   const docWithContent = new Document({
     title: title,
-    description: "Document created with BPRHub Scribe Studio",
+    description: "Document created with Scribe Studio",
     sections: [
       {
         properties: {

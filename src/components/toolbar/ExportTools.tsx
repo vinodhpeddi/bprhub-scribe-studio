@@ -44,7 +44,12 @@ export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, docum
       };
       
       await exportDocument(documentContent, options, documentTitle || "Document");
-      toast.success(`Document exported as ${format.toUpperCase()}`);
+      
+      if (format === 'word') {
+        toast.success(`Document exported as DOCX. Tables, headings, and text formatting have been preserved.`);
+      } else {
+        toast.success(`Document exported as ${format.toUpperCase()}`);
+      }
     } catch (error) {
       console.error('Export error:', error);
       toast.error(`Failed to export document: ${error instanceof Error ? error.message : 'Unknown error'}`);

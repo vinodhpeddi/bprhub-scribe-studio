@@ -1,4 +1,5 @@
-import { Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, AlignmentType, UnderlineType } from 'docx';
+
+import { Paragraph, TextRun, HeadingLevel, TableRow, TableCell, Table, BorderStyle, AlignmentType, UnderlineType, WidthType } from 'docx';
 
 /**
  * Helper: Process a single HTML Node into docx.js Paragraphs, TextRuns, or Tables
@@ -84,11 +85,17 @@ export function processNodeToDocx(node: Node, sections: any[]) {
         return null;
       }
 
-      // Tables
+      // Tables - Improved table handling
       if (tagName === 'table') {
         try {
           const rows = element.querySelectorAll('tr');
           const tableRows = [];
+          const isLayoutTable = element.classList.contains('layout-table');
+          
+          // Calculate column widths based on table width (default to 100%)
+          const tableWidth = element.style.width ? parseInt(element.style.width) : 100;
+          const columnCount = Math.max(...Array.from(rows).map(row => row.querySelectorAll('td, th').length));
+          const columnWidth = columnCount > 0 ? 100 / columnCount : 100;
 
           rows.forEach(row => {
             const cells = row.querySelectorAll('th, td');
@@ -98,46 +105,51 @@ export function processNodeToDocx(node: Node, sections: any[]) {
 
             cells.forEach(cell => {
               const cellChildren = [];
+              const isHeader = cell.tagName.toLowerCase() === 'th';
 
-              // Process cell content
-              if (cell.hasChildNodes()) {
-                Array.from(cell.childNodes).forEach(childNode => {
-                  if (childNode.nodeType === Node.TEXT_NODE) {
-                    if (childNode.textContent && childNode.textContent.trim()) {
-                      cellChildren.push(new Paragraph({
-                        text: childNode.textContent
-                      }));
-                    }
-                  } else if (childNode.nodeType === Node.ELEMENT_NODE) {
-                    const childElement = childNode as HTMLElement;
-                    if (childElement.tagName.toLowerCase() === 'p' || childElement.tagName.toLowerCase() === 'div') {
-                      cellChildren.push(new Paragraph({
-                        text: childElement.textContent || ''
-                      }));
-                    }
-                  }
-                });
+              // Process rich content in cells
+              processTableCell(cell, cellChildren);
+              
+              // If no children after processing, ensure at least an empty paragraph
+              if (cellChildren.length === 0) {
+                cellChildren.push(new Paragraph(""));
               }
 
-              // If no children, add plain text
-              if (cellChildren.length === 0 && cell.textContent) {
-                cellChildren.push(new Paragraph(cell.textContent));
-              }
+              const cellWidth = cell.style.width ? 
+                parseInt(cell.style.width) : 
+                (cell.hasAttribute('colspan') ? 
+                  columnWidth * parseInt(cell.getAttribute('colspan') || '1') : 
+                  columnWidth);
 
               tableCells.push(new TableCell({
-                children: cellChildren.length > 0 ? cellChildren : [new Paragraph("")],
-                borders: {
+                children: cellChildren,
+                width: {
+                  size: cellWidth,
+                  type: WidthType.PERCENTAGE
+                },
+                shading: isHeader ? { 
+                  fill: "F2F2F2" 
+                } : undefined,
+                borders: isLayoutTable ? {
+                  top: { style: BorderStyle.NONE },
+                  bottom: { style: BorderStyle.NONE },
+                  left: { style: BorderStyle.NONE },
+                  right: { style: BorderStyle.NONE }
+                } : {
                   top: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
                   bottom: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
                   left: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
-                  right: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
-                }
+                  right: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" }
+                },
+                verticalAlign: cell.style.verticalAlign === 'top' ? 'top' : 
+                               cell.style.verticalAlign === 'bottom' ? 'bottom' : 'center'
               }));
             });
 
             if (tableCells.length > 0) {
               tableRows.push(new TableRow({
                 children: tableCells,
+                height: { value: "auto" }
               }));
             }
           });
@@ -145,7 +157,15 @@ export function processNodeToDocx(node: Node, sections: any[]) {
           if (tableRows.length > 0) {
             sections.push(new Table({
               rows: tableRows,
+              width: {
+                size: tableWidth,
+                type: WidthType.PERCENTAGE
+              },
+              layout: isLayoutTable ? "autofit" : "fixed"
             }));
+            
+            // Add a paragraph after table to ensure spacing
+            sections.push(new Paragraph(""));
           }
         } catch (error) {
           console.error("Error processing table in Word export:", error);
@@ -181,5 +201,43 @@ export function processNodeToDocx(node: Node, sections: any[]) {
 
     default:
       return null;
+  }
+}
+
+/**
+ * Process the content of a table cell, handling nested elements properly
+ */
+function processTableCell(cell: Element, cellChildren: any[]) {
+  // First check for block level elements
+  const blockElements = cell.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, ul, ol');
+  
+  if (blockElements.length > 0) {
+    // Process each block element separately
+    blockElements.forEach(blockElement => {
+      const blockSections: any[] = [];
+      processNodeToDocx(blockElement, blockSections);
+      if (blockSections.length > 0) {
+        cellChildren.push(...blockSections);
+      }
+    });
+  } else if (cell.childNodes.length > 0) {
+    // Process inline content
+    const runs: TextRun[] = [];
+    
+    Array.from(cell.childNodes).forEach(childNode => {
+      const run = processNodeToDocx(childNode, []);
+      if (run) {
+        runs.push(run as TextRun);
+      }
+    });
+    
+    if (runs.length > 0) {
+      cellChildren.push(new Paragraph({ children: runs }));
+    } else if (cell.textContent) {
+      cellChildren.push(new Paragraph({ text: cell.textContent }));
+    }
+  } else if (cell.textContent && cell.textContent.trim()) {
+    // Just plain text
+    cellChildren.push(new Paragraph({ text: cell.textContent }));
   }
 }
