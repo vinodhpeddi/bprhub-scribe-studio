@@ -5,7 +5,6 @@ import { TableProperties } from './TableProperties';
 import MergeFieldsDropdown from './MergeFieldsDropdown';
 import { useEditorOperations } from '../hooks/useEditorOperations';
 import { useEditorState } from '../hooks/useEditorState';
-import { useAutosave } from '../hooks/useAutosave';
 import EditableContent from './editor/EditableContent';
 
 interface TextEditorProps {
@@ -39,11 +38,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   
   const operations = useEditorOperations(onChange);
 
-  useAutosave({
-    onSave,
-    enabled: !!onSave,
-    delay: 3000
-  });
+  // Removed the useAutosave hook here
 
   const updateActiveFormats = useCallback(() => {
     const formats: string[] = [];

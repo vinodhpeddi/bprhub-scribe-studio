@@ -7,7 +7,8 @@ interface UseAutosaveProps {
   enabled?: boolean;
 }
 
-export function useAutosave({ onSave, delay = 3000, enabled = true }: UseAutosaveProps) {
+// This hook is now disabled but kept for future reference
+export function useAutosave({ onSave, delay = 3000, enabled = false }: UseAutosaveProps) {
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
@@ -46,4 +47,3 @@ export function useAutosave({ onSave, delay = 3000, enabled = true }: UseAutosav
     };
   }, [onSave, delay, enabled]);
 }
-
