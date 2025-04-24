@@ -13,14 +13,14 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
 
   const sections: any[] = [];
 
-  // Add watermark if needed
+  // Add watermark if needed - improved transparency and positioning
   if (options.addWatermark) {
     sections.push(
       new Paragraph({
         children: [
           new TextRun({
             text: "DRAFT - DO NOT USE",
-            color: "989898",
+            color: "D3D3D3", // Light gray for transparency effect
             size: 72,
             bold: true,
           }),
@@ -28,6 +28,9 @@ export async function htmlToDocxConverter(content: string, options: ExportOption
         alignment: AlignmentType.CENTER,
       })
     );
+    
+    // Add spacing after watermark
+    sections.push(new Paragraph({ text: "" }));
   }
 
   // Add TOC if needed

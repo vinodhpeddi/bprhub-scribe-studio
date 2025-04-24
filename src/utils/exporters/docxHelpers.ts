@@ -62,12 +62,30 @@ export function processNodeToDocx(node: Node, sections: any[]) {
         const isBold = tagName === 'strong' || tagName === 'b' || (element.style && element.style.fontWeight === 'bold');
         const isItalic = tagName === 'em' || tagName === 'i' || (element.style && element.style.fontStyle === 'italic');
         const isUnderline = tagName === 'u' || (element.style && element.style.textDecoration === 'underline');
+        
+        // Check for color style
+        let color;
+        if (element.style && element.style.color) {
+          // Convert RGB to hex if needed
+          if (element.style.color.startsWith('rgb')) {
+            const rgb = element.style.color.match(/\d+/g);
+            if (rgb && rgb.length >= 3) {
+              color = '#' + [0, 1, 2].map(i => {
+                const hex = parseInt(rgb[i], 10).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+              }).join('');
+            }
+          } else {
+            color = element.style.color;
+          }
+        }
 
         return new TextRun({
           text: element.textContent || '',
           bold: isBold,
           italics: isItalic,
           underline: isUnderline ? { type: UnderlineType.SINGLE } : undefined,
+          color: color,
         });
       }
 

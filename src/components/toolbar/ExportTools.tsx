@@ -6,6 +6,14 @@ import { exportDocument } from '@/utils/documentExport';
 import { defaultExportOptions } from '@/utils/documentTypes';
 import { toast } from 'sonner';
 import { validatePdfWorker } from '@/utils/pdfWorker';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ExportToolsProps {
   documentContent: string;
@@ -46,7 +54,7 @@ export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, docum
       await exportDocument(documentContent, options, documentTitle || "Document");
       
       if (format === 'word') {
-        toast.success(`Document exported as DOCX. Tables, headings, and text formatting have been preserved.`);
+        toast.success(`Document exported as DOCX with formatting preserved.`);
       } else {
         toast.success(`Document exported as ${format.toUpperCase()}`);
       }
@@ -60,25 +68,31 @@ export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, docum
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <IconButton
-        icon={isExporting && activeExport === 'pdf' ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-        label="Export as PDF"
-        onClick={() => handleExport('pdf')}
-        disabled={isExporting}
-      />
-      <IconButton
-        icon={isExporting && activeExport === 'word' ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-        label="Export as Word"
-        onClick={() => handleExport('word')}
-        disabled={isExporting}
-      />
-      <IconButton
-        icon={isExporting && activeExport === 'html' ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-        label="Export as HTML"
-        onClick={() => handleExport('html')}
-        disabled={isExporting}
-      />
+    <div className="flex items-center">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div>
+            <IconButton
+              icon={isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
+              label="Export Document"
+              disabled={isExporting}
+            />
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Export As</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handleExport('word')}>
+            Word Document (.docx)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExport('pdf')}>
+            PDF Document (.pdf)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExport('html')}>
+            HTML Document (.html)
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

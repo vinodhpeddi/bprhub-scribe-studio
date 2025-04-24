@@ -1,4 +1,3 @@
-
 import { RefObject } from 'react';
 
 interface UsePasteHandlerProps {
@@ -25,6 +24,7 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
       const elements = tempDiv.getElementsByTagName('*');
       for (let i = 0; i < elements.length; i++) {
         const element = elements[i];
+        
         Array.from(element.attributes).forEach(attr => {
           if (attr.name.startsWith('xmlns:') || 
               attr.name.includes('mso-') || 
@@ -36,7 +36,11 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
         
         if ((element.tagName === 'SPAN' || element.tagName === 'DIV') && 
             !element.attributes.length && 
-            !element.textContent?.trim()) {
+            !element.textContent?.trim() &&
+            !element.style.fontWeight && 
+            !element.style.fontStyle && 
+            !element.style.textDecoration &&
+            !element.style.color) {
           element.remove();
         }
       }
