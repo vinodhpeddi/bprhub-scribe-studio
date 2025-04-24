@@ -30,6 +30,7 @@ export const useEditorSelection = () => {
           const range = document.createRange();
           const selection = window.getSelection();
           
+          // Ensure the offset doesn't exceed the node's length
           const safeOffset = Math.min(offset, node.nodeType === Node.TEXT_NODE ? 
             (node.textContent?.length || 0) : node.childNodes.length);
           

@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 
 export function useEditorState(initialValue: string) {
@@ -9,19 +10,22 @@ export function useEditorState(initialValue: string) {
   const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const skipNextUpdateRef = useRef(false);
   
-  // Update content with debounce
+  // Update content with debounce without disrupting cursor position
   const updateContent = (newContent: string) => {
-    contentRef.current = newContent;
-    
-    // Clear previous timeout if it exists
-    if (contentUpdateTimeoutRef.current) {
-      clearTimeout(contentUpdateTimeoutRef.current);
+    // Only update if content has changed
+    if (contentRef.current !== newContent) {
+      contentRef.current = newContent;
+      
+      // Clear previous timeout if it exists
+      if (contentUpdateTimeoutRef.current) {
+        clearTimeout(contentUpdateTimeoutRef.current);
+      }
+      
+      // Set a new timeout with a longer delay to avoid cursor issues
+      contentUpdateTimeoutRef.current = setTimeout(() => {
+        setContent(newContent);
+      }, 500); // Increased debounce time to reduce interference with typing
     }
-    
-    // Set a new timeout
-    contentUpdateTimeoutRef.current = setTimeout(() => {
-      setContent(newContent);
-    }, 300);
   };
   
   return {

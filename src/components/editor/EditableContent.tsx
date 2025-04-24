@@ -38,7 +38,15 @@ const EditableContent: React.FC<EditableContentProps> = ({
       editorRef.current.innerHTML = initialContent;
       setIsInitialized(true);
     }
-  }, [initialContent, isInitialized, setIsInitialized]);
+  }, [initialContent, isInitialized, setIsInitialized, editorRef]);
+
+  // Handle user input with better cursor position retention
+  const handleUserInput = (e: React.FormEvent) => {
+    // First save the current position
+    saveSelection();
+    // Then call the parent's input handler
+    onInput();
+  };
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -46,14 +54,25 @@ const EditableContent: React.FC<EditableContentProps> = ({
     const element = editorRef.current;
     
     const handleNativeClick = () => {
-      requestAnimationFrame(saveSelection);
+      saveSelection();
     };
     
     element.addEventListener('mousedown', handleNativeClick);
     
-    const observer = new MutationObserver(() => {
+    // Use a more careful approach with the mutation observer
+    const observer = new MutationObserver((mutations) => {
       if (document.activeElement === element) {
-        requestAnimationFrame(restoreSelection);
+        // Check if content actually changed
+        const hasContentChange = mutations.some(mutation => 
+          mutation.type === 'characterData' || mutation.type === 'childList');
+        
+        if (hasContentChange) {
+          // Don't restore selection after character data changes
+          // as this would move the cursor back to its previous position
+          if (!mutations.some(m => m.type === 'characterData')) {
+            restoreSelection();
+          }
+        }
       }
     });
     
@@ -67,7 +86,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
       element.removeEventListener('mousedown', handleNativeClick);
       observer.disconnect();
     };
-  }, [saveSelection, restoreSelection]);
+  }, [saveSelection, restoreSelection, editorRef]);
 
   return (
     <div
@@ -75,7 +94,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
       className="editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto"
       contentEditable={true}
       suppressContentEditableWarning={true}
-      onInput={onInput}
+      onInput={handleUserInput}
       onPaste={handlePaste}
       onKeyUp={onKeyUp}
       onKeyDown={onKeyDown}
