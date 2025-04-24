@@ -1,5 +1,4 @@
-
-import { Paragraph, TextRun } from 'docx';
+import { Paragraph, TextRun, AlignmentType } from 'docx';
 import { processHeading } from './docx/headingHelper';
 import { processTextFormat } from './docx/textFormatHelper';
 import { processTable } from './docx/tableHelper';
@@ -36,19 +35,21 @@ export function processNodeToDocx(node: Node, sections: any[]) {
           .map(childNode => processNodeToDocx(childNode, []))
           .filter(Boolean) as TextRun[];
 
+        // Map text alignment to docx AlignmentType
+        const paragraphAlignment = textAlign === 'center' ? AlignmentType.CENTER : 
+                                  textAlign === 'right' ? AlignmentType.RIGHT : 
+                                  textAlign === 'justify' ? AlignmentType.JUSTIFIED : 
+                                  AlignmentType.LEFT;
+
         if (children.length > 0) {
           sections.push(new Paragraph({ 
             children,
-            alignment: textAlign === 'center' ? 'center' : 
-                       textAlign === 'right' ? 'right' : 
-                       textAlign === 'justify' ? 'justified' : 'left'
+            alignment: paragraphAlignment
           }));
         } else if (element.textContent?.trim()) {
           sections.push(new Paragraph({
             text: element.textContent,
-            alignment: textAlign === 'center' ? 'center' : 
-                       textAlign === 'right' ? 'right' : 
-                       textAlign === 'justify' ? 'justified' : 'left'
+            alignment: paragraphAlignment
           }));
         } else {
           // Empty paragraph
