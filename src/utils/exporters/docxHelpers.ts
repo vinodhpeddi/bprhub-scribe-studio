@@ -59,9 +59,9 @@ export function processNodeToDocx(node: Node, sections: any[]) {
 
       // Inline formatting
       if (tagName === 'span' || tagName === 'strong' || tagName === 'em' || tagName === 'b' || tagName === 'i' || tagName === 'u') {
-        const isBold = tagName === 'strong' || tagName === 'b' || element.style.fontWeight === 'bold';
-        const isItalic = tagName === 'em' || tagName === 'i' || element.style.fontStyle === 'italic';
-        const isUnderline = tagName === 'u' || element.style.textDecoration === 'underline';
+        const isBold = tagName === 'strong' || tagName === 'b' || (element.style && element.style.fontWeight === 'bold');
+        const isItalic = tagName === 'em' || tagName === 'i' || (element.style && element.style.fontStyle === 'italic');
+        const isUnderline = tagName === 'u' || (element.style && element.style.textDecoration === 'underline');
 
         return new TextRun({
           text: element.textContent || '',
@@ -93,7 +93,7 @@ export function processNodeToDocx(node: Node, sections: any[]) {
           const isLayoutTable = element.classList.contains('layout-table');
           
           // Calculate column widths based on table width (default to 100%)
-          const tableWidth = element.style.width ? parseInt(element.style.width) : 100;
+          const tableWidth = element.getAttribute('width') ? parseInt(element.getAttribute('width') || '100') : 100;
           const columnCount = Math.max(...Array.from(rows).map(row => row.querySelectorAll('td, th').length));
           const columnWidth = columnCount > 0 ? 100 / columnCount : 100;
 
@@ -115,8 +115,8 @@ export function processNodeToDocx(node: Node, sections: any[]) {
                 cellChildren.push(new Paragraph(""));
               }
 
-              const cellWidth = cell.style.width ? 
-                parseInt(cell.style.width) : 
+              const cellWidth = (cell as HTMLElement).getAttribute('width') ? 
+                parseInt((cell as HTMLElement).getAttribute('width') || '0') : 
                 (cell.hasAttribute('colspan') ? 
                   columnWidth * parseInt(cell.getAttribute('colspan') || '1') : 
                   columnWidth);
@@ -141,15 +141,15 @@ export function processNodeToDocx(node: Node, sections: any[]) {
                   left: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" },
                   right: { style: BorderStyle.SINGLE, size: 1, color: "#CFCFCF" }
                 },
-                verticalAlign: cell.style.verticalAlign === 'top' ? 'top' : 
-                               cell.style.verticalAlign === 'bottom' ? 'bottom' : 'center'
+                verticalAlign: (cell as HTMLElement).getAttribute('valign') === 'top' ? 'top' : 
+                               (cell as HTMLElement).getAttribute('valign') === 'bottom' ? 'bottom' : 'center'
               }));
             });
 
             if (tableCells.length > 0) {
               tableRows.push(new TableRow({
                 children: tableCells,
-                height: { value: "auto" }
+                cantSplit: true
               }));
             }
           });

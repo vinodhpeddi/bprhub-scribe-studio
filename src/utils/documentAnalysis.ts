@@ -1,4 +1,3 @@
-
 export function parseDocumentOutline(content: string): { id: string; level: number; text: string }[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
@@ -65,15 +64,6 @@ export function validateDocument(title: string, content: string): { isValid: boo
   // Validate content
   if (!content || content.trim() === '') {
     errors.push('Document content cannot be empty');
-  }
-  
-  // Check if content has at least one heading
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(content, 'text/html');
-  const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
-  
-  if (headings.length === 0) {
-    errors.push('Document requires at least one heading (H1-H6). Please add a heading using the Heading menu in the toolbar.');
   }
   
   return {
