@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -112,27 +111,53 @@ const TextEditor: React.FC<TextEditorProps> = ({
     e.preventDefault();
     
     // Try to get HTML content first for rich formatting
-    let content = '';
+    let pastedContent = '';
+    
     if (e.clipboardData.types.includes('text/html')) {
-      content = e.clipboardData.getData('text/html');
+      pastedContent = e.clipboardData.getData('text/html');
       
-      // Create a temporary div to clean the pasted HTML
+      // Create a temporary div to sanitize HTML
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = content;
+      tempDiv.innerHTML = pastedContent;
       
-      // Remove potentially harmful scripts
-      const scripts = tempDiv.querySelectorAll('script, style');
-      scripts.forEach(script => script.remove());
+      // Remove potentially harmful elements
+      const elementsToRemove = tempDiv.querySelectorAll('script, style, meta, link');
+      elementsToRemove.forEach(el => el.remove());
+      
+      // Clean up Word-specific XML namespaces and classes
+      const elements = tempDiv.getElementsByTagName('*');
+      for (let i = 0; i < elements.length; i++) {
+        const element = elements[i];
+        Array.from(element.attributes).forEach(attr => {
+          if (attr.name.startsWith('xmlns:') || 
+              attr.name.includes('mso-') || 
+              attr.name.startsWith('o:') ||
+              attr.name.startsWith('v:')) {
+            element.removeAttribute(attr.name);
+          }
+        });
+        
+        // Remove empty spans and divs
+        if ((element.tagName === 'SPAN' || element.tagName === 'DIV') && 
+            !element.attributes.length && 
+            !element.textContent?.trim()) {
+          element.remove();
+        }
+      }
       
       // Insert the cleaned HTML
       document.execCommand('insertHTML', false, tempDiv.innerHTML);
+    } else if (e.clipboardData.types.includes('text/rtf')) {
+      // Handle RTF format if available
+      const plainText = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, plainText);
     } else if (e.clipboardData.types.includes('text/plain')) {
       // Fall back to plain text
-      content = e.clipboardData.getData('text/plain');
-      document.execCommand('insertText', false, content);
+      pastedContent = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, pastedContent);
     }
     
-    // Update the editor state
+    // Update editor state
     if (actualEditorRef.current) {
       const newContent = actualEditorRef.current.innerHTML;
       setContent(newContent);

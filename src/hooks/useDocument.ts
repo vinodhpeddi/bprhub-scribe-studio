@@ -44,8 +44,18 @@ export function useDocument() {
     // Get the default template (blank document)
     const defaultTemplate = templates.find(t => t.id === 'blank') || templates[0];
     
-    // Create a new draft document
-    const newDoc = createNewDraft(defaultTemplate, 'Untitled Document');
+    // Create a new draft document with basic HTML structure
+    const initialContent = `
+      <div class="document-content">
+        <h1>Untitled Document</h1>
+        <p><br></p>
+      </div>
+    `;
+    
+    const newDoc = {
+      ...createNewDraft(defaultTemplate, 'Untitled Document'),
+      content: initialContent
+    };
     
     // Set up the document in our state
     setCurrentDocument(newDoc);
