@@ -1,3 +1,4 @@
+
 import { RefObject } from 'react';
 
 interface UsePasteHandlerProps {
@@ -7,11 +8,30 @@ interface UsePasteHandlerProps {
 }
 
 export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHandlerProps) => {
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const handlePaste = async (e: React.ClipboardEvent) => {
     e.preventDefault();
     
     let pastedContent = '';
     
+    // Handle image paste
+    if (e.clipboardData.items) {
+      for (let i = 0; i < e.clipboardData.items.length; i++) {
+        if (e.clipboardData.items[i].type.indexOf("image") !== -1) {
+          const file = e.clipboardData.items[i].getAsFile();
+          if (file) {
+            try {
+              const imgUrl = await handleImageUpload(file);
+              document.execCommand('insertHTML', false, `<img src="${imgUrl}" alt="Pasted image" style="max-width: 100%;" />`);
+              return;
+            } catch (error) {
+              console.error('Failed to handle image paste:', error);
+            }
+          }
+        }
+      }
+    }
+    
+    // Handle HTML content
     if (e.clipboardData.types.includes('text/html')) {
       pastedContent = e.clipboardData.getData('text/html');
       
@@ -23,7 +43,7 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
       
       const elements = tempDiv.getElementsByTagName('*');
       for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
+        const element = elements[i] as HTMLElement;
         
         Array.from(element.attributes).forEach(attr => {
           if (attr.name.startsWith('xmlns:') || 
@@ -60,6 +80,22 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
       onChange(newContent);
     }
   };
-
+  
   return { handlePaste };
+};
+
+// Helper function to handle image upload
+const handleImageUpload = async (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result as string);
+      } else {
+        reject(new Error('Failed to read image file'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
 };
