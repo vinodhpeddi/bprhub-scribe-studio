@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
-import EditorContent from './editor/EditorContent';
-import { useEditorOperations } from '../hooks/useEditorOperations';
 import MergeFieldsDropdown from './MergeFieldsDropdown';
+import { useEditorOperations } from '../hooks/useEditorOperations';
 import { useEditorState } from '../hooks/useEditorState';
 import { useAutosave } from '../hooks/useAutosave';
-import { toast } from 'sonner';
+import EditableContent from './editor/EditableContent';
 
 interface TextEditorProps {
   initialContent: string;
@@ -33,40 +33,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const { 
     content, 
     setContent,
-    contentRef,
     isInitialized,
-    setIsInitialized,
-    skipNextUpdateRef
+    setIsInitialized
   } = useEditorState(initialContent);
   
   const operations = useEditorOperations(onChange);
 
-  useEffect(() => {
-    if (isInitialized && initialContent !== contentRef.current) {
-      setContent(initialContent);
-    }
-  }, [initialContent, isInitialized]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullScreen) {
-        setIsFullScreen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isFullScreen]);
-
   useAutosave({
-    onSave: () => {
-      if (onSave) {
-        onSave();
-        toast.success('Document saved automatically');
-      }
-    },
+    onSave,
     enabled: !!onSave,
     delay: 3000
   });
@@ -98,72 +72,11 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   const handleEditorInput = useCallback(() => {
     if (!actualEditorRef.current) return;
-    
     updateActiveFormats();
-    skipNextUpdateRef.current = true;
-    
     const newContent = actualEditorRef.current.innerHTML;
     setContent(newContent);
     onChange(newContent);
-  }, [updateActiveFormats, onChange, actualEditorRef, skipNextUpdateRef]);
-
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    e.preventDefault();
-    
-    // Try to get HTML content first for rich formatting
-    let pastedContent = '';
-    
-    if (e.clipboardData.types.includes('text/html')) {
-      pastedContent = e.clipboardData.getData('text/html');
-      
-      // Create a temporary div to sanitize HTML
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = pastedContent;
-      
-      // Remove potentially harmful elements
-      const elementsToRemove = tempDiv.querySelectorAll('script, style, meta, link');
-      elementsToRemove.forEach(el => el.remove());
-      
-      // Clean up Word-specific XML namespaces and classes
-      const elements = tempDiv.getElementsByTagName('*');
-      for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
-        Array.from(element.attributes).forEach(attr => {
-          if (attr.name.startsWith('xmlns:') || 
-              attr.name.includes('mso-') || 
-              attr.name.startsWith('o:') ||
-              attr.name.startsWith('v:')) {
-            element.removeAttribute(attr.name);
-          }
-        });
-        
-        // Remove empty spans and divs
-        if ((element.tagName === 'SPAN' || element.tagName === 'DIV') && 
-            !element.attributes.length && 
-            !element.textContent?.trim()) {
-          element.remove();
-        }
-      }
-      
-      // Insert the cleaned HTML
-      document.execCommand('insertHTML', false, tempDiv.innerHTML);
-    } else if (e.clipboardData.types.includes('text/rtf')) {
-      // Handle RTF format if available
-      const plainText = e.clipboardData.getData('text/plain');
-      document.execCommand('insertText', false, plainText);
-    } else if (e.clipboardData.types.includes('text/plain')) {
-      // Fall back to plain text
-      pastedContent = e.clipboardData.getData('text/plain');
-      document.execCommand('insertText', false, pastedContent);
-    }
-    
-    // Update editor state
-    if (actualEditorRef.current) {
-      const newContent = actualEditorRef.current.innerHTML;
-      setContent(newContent);
-      onChange(newContent);
-    }
-  }, [onChange, actualEditorRef, setContent]);
+  }, [updateActiveFormats, onChange, actualEditorRef]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {
@@ -179,7 +92,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
       setContent(newContent);
       onChange(newContent);
     }
-  }, [onChange, actualEditorRef, setContent]);
+  }, [onChange, actualEditorRef]);
 
   const toggleFullScreen = useCallback(() => {
     setIsFullScreen(!isFullScreen);
@@ -189,7 +102,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     <FormatToolbar 
       onFormatClick={operations.handleFormatClick} 
       activeFormats={activeFormats}
-      documentContent={contentRef.current}
+      documentContent={content}
       documentTitle={documentTitle}
       onToggleFullScreen={toggleFullScreen}
       isFullScreen={isFullScreen}
@@ -197,7 +110,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     >
       <MergeFieldsDropdown onInsertField={handleInsertMergeField} />
     </FormatToolbar>
-  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField]);
+  ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField, content]);
 
   return (
     <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
@@ -211,10 +124,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
           />
         )}
         
-        <EditorContent
+        <EditableContent
           editorRef={actualEditorRef}
           onInput={handleEditorInput}
-          onPaste={handlePaste}
           onKeyUp={updateActiveFormats}
           onKeyDown={handleKeyDown}
           onMouseUp={updateActiveFormats}
@@ -222,6 +134,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
           initialContent={initialContent}
           isInitialized={isInitialized}
           setIsInitialized={setIsInitialized}
+          onChange={onChange}
+          setContent={setContent}
         />
       </div>
     </div>
