@@ -65,22 +65,34 @@ export const useFormatOperations = () => {
         commandValue = value;
         break;
       case 'warning':
-        const warningHtml = `<div style="background-color: #FEF7CD; border: 1px solid #EAB308; border-radius: 4px; padding: 12px; margin: 8px 0;">
-          <p style="color: #854D0E; margin: 0;"><strong>⚠️ Warning:</strong> Add your warning text here</p>
-        </div><p></p>`;
-        document.execCommand('insertHTML', false, warningHtml);
-        return;
       case 'safety':
-        const safetyHtml = `<div style="background-color: #E5DEFF; border: 1px solid #6E59A5; border-radius: 4px; padding: 12px; margin: 8px 0;">
-          <p style="color: #1A1F2C; margin: 0;"><strong>🛡️ Safety Note:</strong> Add safety instructions here</p>
-        </div><p></p>`;
-        document.execCommand('insertHTML', false, safetyHtml);
-        return;
       case 'info':
-        const infoHtml = `<div style="background-color: #D3E4FD; border: 1px solid #0EA5E9; border-radius: 4px; padding: 12px; margin: 8px 0;">
-          <p style="color: #0C4A6E; margin: 0;"><strong>ℹ️ Note:</strong> Add important information here</p>
+        const boxStyles = {
+          warning: {
+            bg: '#FEF7CD',
+            border: '#EAB308',
+            text: '#854D0E',
+            icon: '⚠️ Warning:',
+          },
+          safety: {
+            bg: '#E5DEFF',
+            border: '#6E59A5',
+            text: '#1A1F2C',
+            icon: '🛡️ Safety Note:',
+          },
+          info: {
+            bg: '#D3E4FD',
+            border: '#0EA5E9',
+            text: '#0C4A6E',
+            icon: 'ℹ️ Note:',
+          },
+        };
+        
+        const style = boxStyles[formatType as keyof typeof boxStyles];
+        const boxHtml = `<div style="background-color: ${style.bg}; border: 1px solid ${style.border}; border-radius: 4px; padding: 12px; margin: 8px 0;">
+          <p style="color: ${style.text}; margin: 0;"><strong>${style.icon}</strong> Add your text here</p>
         </div><p></p>`;
-        document.execCommand('insertHTML', false, infoHtml);
+        document.execCommand('insertHTML', false, boxHtml);
         return;
       default:
         return;
