@@ -1,4 +1,3 @@
-
 import { RefObject } from 'react';
 
 interface UsePasteHandlerProps {
@@ -11,8 +10,6 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
   const handlePaste = async (e: React.ClipboardEvent) => {
     e.preventDefault();
     
-    let pastedContent = '';
-    
     // Handle image paste
     if (e.clipboardData.items) {
       for (let i = 0; i < e.clipboardData.items.length; i++) {
@@ -20,8 +17,15 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
           const file = e.clipboardData.items[i].getAsFile();
           if (file) {
             try {
-              const imgUrl = await handleImageUpload(file);
-              document.execCommand('insertHTML', false, `<img src="${imgUrl}" alt="Pasted image" style="max-width: 100%;" />`);
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                if (e.target?.result && editorRef.current) {
+                  const imgHtml = `<img src="${e.target.result}" alt="Pasted image" style="max-width: 100%; height: auto; margin: 10px 0;" />`;
+                  document.execCommand('insertHTML', false, imgHtml);
+                  onChange(editorRef.current.innerHTML);
+                }
+              };
+              reader.readAsDataURL(file);
               return;
             } catch (error) {
               console.error('Failed to handle image paste:', error);
@@ -31,20 +35,22 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
       }
     }
     
-    // Handle HTML content
+    // Handle HTML content with preserved formatting
     if (e.clipboardData.types.includes('text/html')) {
-      pastedContent = e.clipboardData.getData('text/html');
-      
+      const html = e.clipboardData.getData('text/html');
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = pastedContent;
+      tempDiv.innerHTML = html;
       
+      // Clean up unwanted elements but preserve formatting
       const elementsToRemove = tempDiv.querySelectorAll('script, style, meta, link');
       elementsToRemove.forEach(el => el.remove());
       
+      // Process all elements to ensure proper attributes
       const elements = tempDiv.getElementsByTagName('*');
       for (let i = 0; i < elements.length; i++) {
         const element = elements[i] as HTMLElement;
         
+        // Remove unwanted attributes but keep styling
         Array.from(element.attributes).forEach(attr => {
           if (attr.name.startsWith('xmlns:') || 
               attr.name.includes('mso-') || 
@@ -53,15 +59,13 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
             element.removeAttribute(attr.name);
           }
         });
-        
-        if ((element.tagName === 'SPAN' || element.tagName === 'DIV') && 
-            !element.attributes.length && 
-            !element.textContent?.trim() &&
-            !element.style.fontWeight && 
-            !element.style.fontStyle && 
-            !element.style.textDecoration &&
-            !element.style.color) {
-          element.remove();
+
+        // Keep specific styles for tables
+        if (element.tagName === 'TABLE') {
+          element.setAttribute('style', 'border-collapse: collapse; width: 100%; margin: 10px 0;');
+        }
+        if (element.tagName === 'TD' || element.tagName === 'TH') {
+          element.setAttribute('style', 'border: 1px solid #ddd; padding: 8px;');
         }
       }
       
@@ -70,8 +74,8 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
       const plainText = e.clipboardData.getData('text/plain');
       document.execCommand('insertText', false, plainText);
     } else if (e.clipboardData.types.includes('text/plain')) {
-      pastedContent = e.clipboardData.getData('text/plain');
-      document.execCommand('insertText', false, pastedContent);
+      const text = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, text);
     }
     
     if (editorRef.current) {
@@ -82,20 +86,4 @@ export const usePasteHandler = ({ editorRef, onChange, setContent }: UsePasteHan
   };
   
   return { handlePaste };
-};
-
-// Helper function to handle image upload
-const handleImageUpload = async (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        resolve(e.target.result as string);
-      } else {
-        reject(new Error('Failed to read image file'));
-      }
-    };
-    reader.onerror = () => reject(new Error('Failed to read image file'));
-    reader.readAsDataURL(file);
-  });
 };

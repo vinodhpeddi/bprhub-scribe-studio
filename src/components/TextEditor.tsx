@@ -19,7 +19,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   initialContent, 
   onChange, 
   editorRef,
-  documentTitle = "Document",
+  documentTitle,
   onSave 
 }) => {
   const defaultEditorRef = useRef<HTMLDivElement>(null);
@@ -108,7 +108,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   ), [operations, activeFormats, documentTitle, toggleFullScreen, isFullScreen, handleInsertMergeField, content]);
 
   return (
-    <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
+    <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : ''}`}>
       <div className={`${isFullScreen ? 'container mx-auto max-w-6xl' : ''}`}>
         {formatToolbar}
         
