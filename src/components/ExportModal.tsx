@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
 
   const handleExport = async () => {
     try {
-      // Validate document before export
       const validation = validateDocument(documentTitle, documentContent);
       if (!validation.isValid) {
         setValidationErrors(validation.errors);
@@ -35,10 +33,13 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
       setIsExporting(true);
       await exportDocument(documentContent, options, documentTitle);
       toast.success(`Document exported as ${options.format.toUpperCase()}`);
+      if (options.format === 'word') {
+        toast.info("For best formatting results, you may want to use the 'Export as HTML' option and convert to DOCX using an online converter.");
+      }
       onClose();
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export document');
+      toast.error('Failed to export document. Try exporting as HTML first.');
     } finally {
       setIsExporting(false);
     }

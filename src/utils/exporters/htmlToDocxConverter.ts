@@ -1,13 +1,45 @@
-
 import { Document, Packer, Paragraph, HeadingLevel, SectionType, AlignmentType, TextRun, Table, ImageRun } from 'docx';
 import { ExportOptions } from '../documentTypes';
+import { saveAs } from 'file-saver';
+import { htmlToStandaloneHtml } from './htmlExporter';
 import { generateTableOfContents } from '../documentAnalysis';
 import { processNodeToDocx } from './docxHelpers';
 
-/**
- * Convert HTML content to docx Blob.
- */
 export async function htmlToDocxConverter(content: string, options: ExportOptions, title: string): Promise<Blob> {
+  // First convert to standalone HTML with all styles
+  const htmlBlob = htmlToStandaloneHtml(content, options, title);
+  
+  // Convert HTML Blob to text
+  const htmlText = await htmlBlob.text();
+  
+  // Create FormData
+  const formData = new FormData();
+  formData.append('htmlContent', htmlText);
+  
+  try {
+    // Using CloudConvert's API (you'll need to implement your own server endpoint)
+    // For now, we'll use a mock online converter service
+    const response = await fetch('YOUR_SERVER_ENDPOINT/convert-html-to-docx', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error('Conversion failed');
+    }
+    
+    const docxBlob = await response.blob();
+    return docxBlob;
+    
+  } catch (error) {
+    console.error('HTML to DOCX conversion failed:', error);
+    // Fallback to previous conversion method if online conversion fails
+    return fallbackConversion(content, options, title);
+  }
+}
+
+// Fallback to our previous conversion method if online conversion fails
+async function fallbackConversion(content: string, options: ExportOptions, title: string): Promise<Blob> {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
 
