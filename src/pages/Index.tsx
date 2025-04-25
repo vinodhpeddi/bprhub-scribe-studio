@@ -7,9 +7,13 @@ import DocumentOutline from '@/components/DocumentOutline';
 import ImportModal from '@/components/ImportModal';
 import DocumentListModal from '@/components/DocumentListModal';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, Users } from 'lucide-react';
 import { useDocument } from '@/hooks/useDocument';
 import { initPdfWorker } from '@/utils/pdfWorker';
+import { connectToCollaborationService, getCurrentUser, updateCurrentUserName } from '@/utils/collaborationService';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Initialize PDF.js worker
 initPdfWorker();
@@ -30,9 +34,31 @@ const Index = () => {
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
+  const [showUserNameDialog, setShowUserNameDialog] = useState(false);
+  const [userName, setUserName] = useState(getCurrentUser().name);
+  const [isCollaborationConnected, setIsCollaborationConnected] = useState(false);
+
+  useEffect(() => {
+    // Connect to the collaboration service
+    connectToCollaborationService().then(() => {
+      setIsCollaborationConnected(true);
+      
+      // Show username dialog if it's the default
+      if (getCurrentUser().name === 'Anonymous User') {
+        setShowUserNameDialog(true);
+      }
+    });
+  }, []);
 
   const handleImportComplete = (content: string) => {
     setDocumentContent(content);
+  };
+
+  const handleUserNameSave = () => {
+    if (userName.trim()) {
+      updateCurrentUserName(userName.trim());
+      setShowUserNameDialog(false);
+    }
   };
 
   return (
@@ -59,6 +85,15 @@ const Index = () => {
             >
               <FileText className="h-4 w-4 mr-2" />
               Back to Documents
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowUserNameDialog(true)}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              <span>{getCurrentUser().name}</span>
             </Button>
           </div>
         </div>
@@ -89,6 +124,7 @@ const Index = () => {
               editorRef={editorRef}
               documentTitle={documentTitle}
               onSave={handleSaveDocument}
+              documentId={currentDocument?.id}
             />
           </div>
           
@@ -112,6 +148,31 @@ const Index = () => {
         onClose={() => setIsDocListModalOpen(false)}
         onDocumentSelect={handleDocumentSelect}
       />
+      
+      <Dialog open={showUserNameDialog} onOpenChange={setShowUserNameDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Enter Your Name</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="userName">Your Name</Label>
+            <Input
+              id="userName"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter your name"
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              This name will be visible to others when collaborating on documents.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleUserNameSave}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

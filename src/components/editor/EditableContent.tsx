@@ -16,6 +16,7 @@ interface EditableContentProps {
   setIsInitialized: (value: boolean) => void;
   onChange: (content: string) => void;
   setContent: (content: string) => void;
+  isReadOnly?: boolean;
 }
 
 const EditableContent: React.FC<EditableContentProps> = ({
@@ -29,7 +30,8 @@ const EditableContent: React.FC<EditableContentProps> = ({
   isInitialized,
   setIsInitialized,
   onChange,
-  setContent
+  setContent,
+  isReadOnly = false
 }) => {
   const { handlePaste } = usePasteHandler({ editorRef, onChange, setContent });
   const { saveSelection, restoreSelection } = useEditorSelection();
@@ -44,11 +46,14 @@ const EditableContent: React.FC<EditableContentProps> = ({
 
   // Set up drag and drop for images
   useEffect(() => {
+    if (isReadOnly) return; // Don't set up drag and drop in read-only mode
     return setupDragAndDrop();
-  }, [setupDragAndDrop]);
+  }, [setupDragAndDrop, isReadOnly]);
 
   // Handle user input with better cursor position retention
   const handleUserInput = (e: React.FormEvent) => {
+    if (isReadOnly) return; // Don't handle input in read-only mode
+    
     // First save the current position
     saveSelection();
     // Then call the parent's input handler
@@ -68,6 +73,8 @@ const EditableContent: React.FC<EditableContentProps> = ({
     
     // Use a more careful approach with the mutation observer
     const observer = new MutationObserver((mutations) => {
+      if (isReadOnly) return; // Don't handle mutations in read-only mode
+      
       if (document.activeElement === element) {
         // Check if content actually changed
         const hasContentChange = mutations.some(mutation => 
@@ -83,39 +90,46 @@ const EditableContent: React.FC<EditableContentProps> = ({
       }
     });
     
-    observer.observe(element, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    if (!isReadOnly) {
+      observer.observe(element, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
     
     return () => {
       element.removeEventListener('mousedown', handleNativeClick);
       observer.disconnect();
     };
-  }, [saveSelection, restoreSelection, editorRef]);
+  }, [saveSelection, restoreSelection, editorRef, isReadOnly]);
 
   return (
     <div
       ref={editorRef}
-      className="editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto"
-      contentEditable={true}
+      className={`editor-content min-h-[400px] border border-gray-200 rounded-md p-4 overflow-auto ${
+        isReadOnly ? 'bg-gray-50 cursor-default' : ''
+      }`}
+      contentEditable={!isReadOnly}
       suppressContentEditableWarning={true}
       onInput={handleUserInput}
-      onPaste={handlePaste}
+      onPaste={isReadOnly ? undefined : handlePaste}
       onKeyUp={onKeyUp}
       onKeyDown={onKeyDown}
       onMouseUp={onMouseUp}
       onClick={onClick}
-      onDrop={handleImageDrop}
-      spellCheck={true}
+      onDrop={isReadOnly ? undefined : handleImageDrop}
+      spellCheck={!isReadOnly}
+      aria-readonly={isReadOnly}
       style={{
         fontSize: '14px',
         lineHeight: '1.6',
         fontFamily: 'Arial, sans-serif',
         minHeight: '50vh',
         maxHeight: '70vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        userSelect: isReadOnly ? 'text' : 'auto',
+        WebkitUserSelect: isReadOnly ? 'text' : 'auto',
       }}
     />
   );
