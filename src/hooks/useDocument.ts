@@ -5,6 +5,9 @@ import { useDocumentState } from './document/useDocumentState';
 import { useDocumentOperations } from './document/useDocumentOperations';
 import { useRevisionOperations } from './document/useRevisionOperations';
 import { useAutoSave } from './document/useAutoSave';
+import { saveRevision } from '@/utils/documentStorage';
+import { toast } from 'sonner';
+import { finalizeDraft, saveDocument } from '@/utils/documentStorage';
 
 export function useDocument() {
   const location = useLocation();
@@ -31,7 +34,7 @@ export function useDocument() {
       
       state.autoSaveIntervalRef.current = setInterval(() => {
         if (state.currentDocument) {
-          saveRevisionOperation(
+          saveRevision(
             state.currentDocument.id,
             state.contentRef.current,
             state.titleRef.current,
@@ -50,12 +53,81 @@ export function useDocument() {
     };
   }, [state.autoSaveInterval, state.currentDocument?.id, state.isViewingRevision]);
 
+  // Add missing document operations
+  const handleSaveDocument = () => {
+    if (!state.currentDocument) return;
+    
+    const updatedDocument = {
+      ...state.currentDocument,
+      content: state.contentRef.current,
+      title: state.titleRef.current,
+      lastModified: new Date().toISOString()
+    };
+    
+    saveDocument(updatedDocument);
+    state.setCurrentDocument(updatedDocument);
+    toast.success("Document saved successfully");
+  };
+  
+  const handleFinalizeDocument = () => {
+    if (!state.currentDocument?.isDraft) return;
+    
+    const finalizedDoc = finalizeDraft(state.currentDocument.id);
+    state.setCurrentDocument(finalizedDoc);
+    toast.success("Document has been finalized");
+  };
+  
+  const exitRevisionView = () => {
+    if (!state.currentDocument) return;
+    
+    state.setIsViewingRevision(false);
+    state.setCurrentRevision(null);
+    state.setDocumentContent(state.contentRef.current);
+    state.setDocumentTitle(state.titleRef.current);
+    toast.info("Exited revision view");
+  };
+  
+  const restoreRevision = (revisionId: string) => {
+    if (!state.currentDocument) return;
+    
+    const revision = state.revisions.find(rev => rev.id === revisionId);
+    if (!revision) return;
+    
+    state.contentRef.current = revision.content;
+    state.titleRef.current = revision.title;
+    state.setDocumentContent(revision.content);
+    state.setDocumentTitle(revision.title);
+    state.setIsViewingRevision(false);
+    state.setCurrentRevision(null);
+    
+    // Save the document with the restored content
+    handleSaveDocument();
+    
+    toast.success("Revision restored successfully");
+  };
+  
+  const updateRevision = (revisionId: string, label: string, description?: string) => {
+    if (!state.currentDocument) return;
+    
+    const updatedRevisions = state.revisions.map(rev => 
+      rev.id === revisionId ? { ...rev, label, description } : rev
+    );
+    
+    state.setRevisions(updatedRevisions);
+    toast.success("Revision updated successfully");
+  };
+
   return {
     ...state,
     handleDocumentSelect,
     initializeNewDocument,
     saveDocumentRevision,
     viewRevision,
-    setAutoSaveConfig
+    setAutoSaveConfig,
+    handleSaveDocument,
+    handleFinalizeDocument,
+    exitRevisionView,
+    restoreRevision,
+    updateRevision
   };
 }

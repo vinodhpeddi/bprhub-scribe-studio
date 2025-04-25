@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import TextFormatting from '../toolbar/TextFormatting';
 import { ListFormatting } from '../toolbar/ListFormatting';
@@ -39,8 +40,8 @@ export function EditorToolbar({
         
         <InsertTools 
           onFormatClick={onFormatClick} 
-          onInsertTable={(isLayout) => operations?.handleTableInsert(isLayout)} 
-          onInsertImage={() => operations?.handleImageInsert()}
+          onInsertTable={operations?.handleTableInsert} 
+          onInsertImage={operations?.handleImageInsert}
           disabled={disabled}
         />
         

@@ -1,3 +1,4 @@
+
 import { useCallback, useMemo } from 'react';
 import { useTableOperations } from './editor/useTableOperations';
 import { useListOperations } from './editor/useListOperations';
@@ -11,6 +12,8 @@ export interface EditorOperations {
   handleListIndent: (increase: boolean) => void;
   handleFormatClick: (formatType: string, value?: string) => void;
   insertDefaultHeading: () => void;
+  handleTableInsert?: (isLayout: boolean) => void;
+  handleImageInsert?: () => void;
 }
 
 export const useEditorOperations = (onChange: (content: string) => void) => {
@@ -52,6 +55,9 @@ export const useEditorOperations = (onChange: (content: string) => void) => {
     insertDefaultHeading: stableInsertDefaultHeading,
     handleListIndent: stableHandleListIndent,
     handleFormatClick: stableHandleFormatClick,
+    // Add these properties to match the expected interface in EditorToolbar
+    handleTableInsert: stableInsertTable,
+    handleImageInsert: stableInsertImage
   }), [
     stableInsertTable,
     stableInsertChecklist,

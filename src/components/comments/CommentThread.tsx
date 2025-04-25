@@ -1,10 +1,9 @@
 
-import { Comment } from '@/utils/commentTypes';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, CheckCircle2, XCircle, Edit2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { Comment } from '@/utils/commentTypes';
+import { CommentContent } from './CommentContent';
+import { CommentActions } from './CommentActions';
+import { CommentReplyForm } from './CommentReplyForm';
 
 interface CommentThreadProps {
   comment: Comment;
@@ -49,101 +48,33 @@ export function CommentThread({
     <div className="space-y-4">
       <div className={`p-4 rounded-lg border ${comment.resolved ? 'bg-gray-50' : 'bg-white'}`}>
         <div className="flex justify-between items-start mb-2">
-          <div>
-            <span className="font-medium">{comment.userName}</span>
-            <span className="text-gray-500 text-sm ml-2">
-              {formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true })}
-            </span>
-          </div>
-          <div className="flex space-x-2">
-            {!comment.resolved ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onResolve(comment.id)}
-              >
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                <span>Resolve</span>
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onReopen(comment.id)}
-              >
-                <XCircle className="h-4 w-4 mr-1" />
-                <span>Reopen</span>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(comment.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          <CommentContent 
+            comment={comment}
+            isEditing={isEditing}
+            editContent={editContent}
+            onEditChange={setEditContent}
+            onSaveEdit={handleSubmitEdit}
+            onCancelEdit={() => setIsEditing(false)}
+          />
+          
+          <CommentActions 
+            isResolved={!!comment.resolved}
+            onResolve={() => onResolve(comment.id)}
+            onReopen={() => onReopen(comment.id)}
+            onEdit={() => setIsEditing(!isEditing)}
+            onDelete={() => onDelete(comment.id)}
+            onReply={() => setIsReplying(true)}
+            isReplying={isReplying}
+          />
         </div>
 
-        {isEditing ? (
-          <div className="space-y-2">
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[100px]"
-            />
-            <div className="flex space-x-2">
-              <Button size="sm" onClick={handleSubmitEdit}>Save</Button>
-              <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="text-gray-700 mb-2">{comment.content}</div>
-            {comment.mentions?.length > 0 && (
-              <div className="text-sm text-blue-600">
-                {comment.mentions.map(mention => `@${mention}`).join(' ')}
-              </div>
-            )}
-          </>
-        )}
-
-        {!isReplying && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsReplying(true)}
-            className="mt-2"
-          >
-            <MessageSquare className="h-4 w-4 mr-1" />
-            <span>Reply</span>
-          </Button>
-        )}
-
         {isReplying && (
-          <div className="mt-2 space-y-2">
-            <Textarea
-              placeholder="Write a reply..."
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              className="min-h-[100px]"
-            />
-            <div className="flex space-x-2">
-              <Button size="sm" onClick={handleSubmitReply}>Reply</Button>
-              <Button size="sm" variant="ghost" onClick={() => setIsReplying(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
+          <CommentReplyForm 
+            replyContent={replyContent}
+            onReplyChange={setReplyContent}
+            onSubmitReply={handleSubmitReply}
+            onCancelReply={() => setIsReplying(false)}
+          />
         )}
       </div>
 
