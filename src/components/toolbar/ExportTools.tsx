@@ -18,9 +18,14 @@ import {
 interface ExportToolsProps {
   documentContent: string;
   documentTitle: string;
+  disabled?: boolean; // Add disabled prop
 }
 
-export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, documentTitle }) => {
+export const ExportTools: React.FC<ExportToolsProps> = ({ 
+  documentContent, 
+  documentTitle,
+  disabled = false // Default to enabled
+}) => {
   const [isExporting, setIsExporting] = useState(false);
   const [activeExport, setActiveExport] = useState<'pdf' | 'word' | 'html' | null>(null);
   
@@ -75,7 +80,7 @@ export const ExportTools: React.FC<ExportToolsProps> = ({ documentContent, docum
             <IconButton
               icon={isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
               label="Export Document"
-              disabled={isExporting}
+              disabled={isExporting || disabled}
             />
           </div>
         </DropdownMenuTrigger>

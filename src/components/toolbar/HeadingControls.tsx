@@ -11,9 +11,13 @@ import {
 
 interface HeadingControlsProps {
   onFormatClick: (formatType: string, value?: string) => void;
+  disabled?: boolean; // Add disabled prop
 }
 
-export const HeadingControls: React.FC<HeadingControlsProps> = ({ onFormatClick }) => {
+export const HeadingControls: React.FC<HeadingControlsProps> = ({ 
+  onFormatClick,
+  disabled = false // Default to enabled
+}) => {
   const handleHeadingClick = (headingType: string) => {
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
@@ -34,7 +38,12 @@ export const HeadingControls: React.FC<HeadingControlsProps> = ({ onFormatClick 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 px-2 flex items-center">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-8 px-2 flex items-center"
+          disabled={disabled}
+        >
           <Heading size={18} className="mr-1" />
           <span>Heading</span>
         </Button>

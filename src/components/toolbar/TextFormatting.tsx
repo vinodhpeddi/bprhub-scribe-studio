@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { IconButton } from '@/components/ui/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
 
 interface TextFormattingProps {
@@ -20,21 +20,21 @@ const TextFormatting: React.FC<TextFormattingProps> = ({
         onClick={() => onFormatClick('bold')}
         active={activeFormats.includes('bold')}
         icon={<Bold className="h-4 w-4" />}
-        tooltip="Bold"
+        label="Bold"
         disabled={disabled}
       />
       <IconButton
         onClick={() => onFormatClick('italic')}
         active={activeFormats.includes('italic')}
         icon={<Italic className="h-4 w-4" />}
-        tooltip="Italic"
+        label="Italic"
         disabled={disabled}
       />
       <IconButton
         onClick={() => onFormatClick('underline')}
         active={activeFormats.includes('underline')}
         icon={<Underline className="h-4 w-4" />}
-        tooltip="Underline"
+        label="Underline"
         disabled={disabled}
       />
 
@@ -43,25 +43,25 @@ const TextFormatting: React.FC<TextFormattingProps> = ({
       <IconButton
         onClick={() => onFormatClick('align', 'left')}
         icon={<AlignLeft className="h-4 w-4" />}
-        tooltip="Align Left"
+        label="Align Left"
         disabled={disabled}
       />
       <IconButton
         onClick={() => onFormatClick('align', 'center')}
         icon={<AlignCenter className="h-4 w-4" />}
-        tooltip="Align Center"
+        label="Align Center"
         disabled={disabled}
       />
       <IconButton
         onClick={() => onFormatClick('align', 'right')}
         icon={<AlignRight className="h-4 w-4" />}
-        tooltip="Align Right"
+        label="Align Right"
         disabled={disabled}
       />
       <IconButton
         onClick={() => onFormatClick('align', 'justify')}
         icon={<AlignJustify className="h-4 w-4" />}
-        tooltip="Justify"
+        label="Justify"
         disabled={disabled}
       />
     </>

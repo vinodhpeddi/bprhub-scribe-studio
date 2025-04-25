@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Database, ChevronDown } from 'lucide-react';
-import { getMergeFields } from '@/utils/mergeFields';
+import { MergeField } from '@/utils/mergeFields';
 
 export interface MergeFieldsDropdownProps {
   onInsertField: (field: string) => void;
@@ -20,7 +20,15 @@ const MergeFieldsDropdown: React.FC<MergeFieldsDropdownProps> = ({
   disabled = false // Default to enabled
 }) => {
   const [open, setOpen] = useState(false);
-  const mergeFields = getMergeFields();
+  
+  // Hardcoded merge fields since the getMergeFields function doesn't exist
+  const mergeFields: MergeField[] = [
+    { name: 'First Name', tag: '{{firstName}}' },
+    { name: 'Last Name', tag: '{{lastName}}' },
+    { name: 'Email', tag: '{{email}}' },
+    { name: 'Company', tag: '{{company}}' },
+    { name: 'Phone', tag: '{{phone}}' }
+  ];
   
   const handleSelectField = (field: string) => {
     onInsertField(field);

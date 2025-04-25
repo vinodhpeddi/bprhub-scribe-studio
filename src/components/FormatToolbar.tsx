@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import TextFormatting from './toolbar/TextFormatting';
-import ListFormatting from './toolbar/ListFormatting';
-import HeadingControls from './toolbar/HeadingControls';
-import InsertTools from './toolbar/InsertTools';
-import ExportTools from './toolbar/ExportTools';
+import { ListFormatting } from './toolbar/ListFormatting';
+import { HeadingControls } from './toolbar/HeadingControls';
+import { InsertTools } from './toolbar/InsertTools';
+import { ExportTools } from './toolbar/ExportTools';
 import { Separator } from './ui/separator';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -55,7 +55,8 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
         
         <InsertTools 
           onFormatClick={onFormatClick} 
-          operations={operations} 
+          onInsertTable={(isLayout) => operations?.handleTableInsert(isLayout)} 
+          onInsertImage={() => operations?.handleImageInsert()}
           disabled={disabled}
         />
         
