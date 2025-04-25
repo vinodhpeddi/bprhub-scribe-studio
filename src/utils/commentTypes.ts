@@ -13,3 +13,15 @@ export interface Comment {
 }
 
 export type CommentDisplayMode = 'inline' | 'narrow-sidebar' | 'wide-sidebar';
+
+export interface Revision {
+  id: string;
+  timestamp: string;
+  content: string;
+  title: string;
+  authorId: string;
+  authorName: string;
+  label?: string;
+  description?: string;
+  isAuto?: boolean;
+}

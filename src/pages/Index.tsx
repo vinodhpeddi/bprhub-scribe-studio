@@ -29,7 +29,18 @@ const Index = () => {
     currentDocument,
     handleSaveDocument,
     handleFinalizeDocument,
-    handleDocumentSelect
+    handleDocumentSelect,
+    // New revision history props
+    revisions,
+    currentRevision,
+    isViewingRevision,
+    saveDocumentRevision,
+    viewRevision,
+    restoreRevision,
+    exitRevisionView,
+    updateRevision,
+    autoSaveInterval,
+    setAutoSaveConfig
   } = useDocument();
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -125,6 +136,17 @@ const Index = () => {
               documentTitle={documentTitle}
               onSave={handleSaveDocument}
               documentId={currentDocument?.id}
+              // Pass revision history props
+              revisions={revisions}
+              currentRevision={currentRevision}
+              isViewingRevision={isViewingRevision}
+              onSaveRevision={saveDocumentRevision}
+              onViewRevision={viewRevision}
+              onRestoreRevision={restoreRevision}
+              onExitRevisionView={exitRevisionView}
+              onUpdateRevision={updateRevision}
+              onSetAutoSave={setAutoSaveConfig}
+              autoSaveInterval={autoSaveInterval}
             />
           </div>
           

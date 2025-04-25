@@ -1,6 +1,8 @@
 
 import { UserDocument } from './documentTypes';
-import { acquireLock, releaseLock } from './collaborationService';
+import { acquireLock, releaseLock, getCurrentUser } from './collaborationService';
+import { Revision } from './commentTypes';
+import { v4 as uuidv4 } from 'uuid';
 
 export function saveDocument(document: UserDocument): void {
   try {
@@ -47,6 +49,9 @@ export function deleteDocument(id: string): void {
     const docs = getAllDocuments();
     const filteredDocs = docs.filter(doc => doc.id !== id);
     localStorage.setItem('userDocuments', JSON.stringify(filteredDocs));
+    
+    // Delete associated revisions
+    deleteDocumentRevisions(id);
     
     // Make sure to release any existing lock when deleting
     releaseLock(id);
@@ -104,6 +109,87 @@ export function isDocumentLocked(documentId: string): boolean {
   } catch (error) {
     console.error('Error checking document lock:', error);
     return false;
+  }
+}
+
+// New revision history functionality
+export function getDocumentRevisions(documentId: string): Revision[] {
+  try {
+    const storedRevisions = localStorage.getItem(`revisions_${documentId}`);
+    return storedRevisions ? JSON.parse(storedRevisions) : [];
+  } catch (error) {
+    console.error('Error getting document revisions:', error);
+    return [];
+  }
+}
+
+export function saveRevision(documentId: string, content: string, title: string, isAuto: boolean = false, label?: string, description?: string): Revision {
+  try {
+    const user = getCurrentUser();
+    const revisions = getDocumentRevisions(documentId);
+    
+    // Create new revision
+    const newRevision: Revision = {
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      content,
+      title,
+      authorId: user.id,
+      authorName: user.name,
+      isAuto,
+      label,
+      description
+    };
+    
+    // Add to revisions list
+    revisions.push(newRevision);
+    
+    // Save to local storage
+    localStorage.setItem(`revisions_${documentId}`, JSON.stringify(revisions));
+    
+    return newRevision;
+  } catch (error) {
+    console.error('Error saving revision:', error);
+    throw error;
+  }
+}
+
+export function updateRevisionLabel(documentId: string, revisionId: string, label: string, description?: string): void {
+  try {
+    const revisions = getDocumentRevisions(documentId);
+    const index = revisions.findIndex(rev => rev.id === revisionId);
+    
+    if (index >= 0) {
+      revisions[index] = {
+        ...revisions[index],
+        label,
+        description: description || revisions[index].description
+      };
+      
+      localStorage.setItem(`revisions_${documentId}`, JSON.stringify(revisions));
+    }
+  } catch (error) {
+    console.error('Error updating revision label:', error);
+    throw error;
+  }
+}
+
+export function deleteDocumentRevisions(documentId: string): void {
+  try {
+    localStorage.removeItem(`revisions_${documentId}`);
+  } catch (error) {
+    console.error('Error deleting document revisions:', error);
+    throw error;
+  }
+}
+
+export function getRevisionById(documentId: string, revisionId: string): Revision | null {
+  try {
+    const revisions = getDocumentRevisions(documentId);
+    return revisions.find(rev => rev.id === revisionId) || null;
+  } catch (error) {
+    console.error('Error getting revision:', error);
+    return null;
   }
 }
 

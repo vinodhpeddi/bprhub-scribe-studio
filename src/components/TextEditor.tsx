@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 import { DocumentChange } from '@/utils/collaborationTypes';
 import { useComments } from '@/hooks/useComments';
 import { Comments } from './comments/Comments';
+import { RevisionHistory } from './revision/RevisionHistory';
 
 interface TextEditorProps {
   initialContent: string;
@@ -23,15 +25,37 @@ interface TextEditorProps {
   documentTitle?: string;
   onSave?: () => void;
   documentId?: string;
+  // New revision history props
+  revisions?: import('@/utils/commentTypes').Revision[];
+  currentRevision?: import('@/utils/commentTypes').Revision | null;
+  isViewingRevision?: boolean;
+  onSaveRevision?: (label?: string, description?: string) => void;
+  onViewRevision?: (revisionId: string) => void;
+  onRestoreRevision?: (revisionId: string) => void;
+  onExitRevisionView?: () => void;
+  onUpdateRevision?: (revisionId: string, label: string, description?: string) => void;
+  onSetAutoSave?: (intervalMinutes: number | null) => void;
+  autoSaveInterval?: number | null;
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({ 
   initialContent, 
   onChange, 
   editorRef,
-  documentTitle,
+  documentTitle = '',
   onSave,
-  documentId = 'temp-doc-id'
+  documentId = 'temp-doc-id',
+  // New revision history props
+  revisions = [],
+  currentRevision = null,
+  isViewingRevision = false,
+  onSaveRevision = () => {},
+  onViewRevision = () => {},
+  onRestoreRevision = () => {},
+  onExitRevisionView = () => {},
+  onUpdateRevision = () => {},
+  onSetAutoSave = () => {},
+  autoSaveInterval = null
 }) => {
   const defaultEditorRef = useRef<HTMLDivElement>(null);
   const actualEditorRef = editorRef || defaultEditorRef;
@@ -64,8 +88,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
     addDocumentChange
   } = useCollaboration(documentId);
 
-  // Handle read-only mode when document is locked by someone else
-  const isReadOnly = isLocked && lockedBy !== null;
+  // Handle read-only mode when document is locked by someone else or viewing revision
+  const isReadOnly = (isLocked && lockedBy !== null) || isViewingRevision;
 
   const updateActiveFormats = useCallback(() => {
     if (isReadOnly) return; // Don't update formats in read-only mode
@@ -241,15 +265,39 @@ const TextEditor: React.FC<TextEditorProps> = ({
           <div className="flex items-center space-x-2">
             {documentId && <UserPresence documentId={documentId} />}
             
-            {isReadOnly && (
+            {isLocked && lockedBy !== null && (
               <div className="flex items-center text-sm text-amber-600">
                 <Eye className="h-4 w-4 mr-1" />
                 <span>View only (locked by {lockedBy})</span>
               </div>
             )}
+            
+            {isViewingRevision && (
+              <div className="flex items-center text-sm text-blue-600">
+                <Eye className="h-4 w-4 mr-1" />
+                <span>
+                  Viewing revision{currentRevision?.label ? `: ${currentRevision.label}` : ''}
+                </span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-2">
+            {/* Revision History Button */}
+            <RevisionHistory 
+              revisions={revisions}
+              currentRevision={currentRevision}
+              isViewingRevision={isViewingRevision}
+              onSaveRevision={onSaveRevision}
+              onViewRevision={onViewRevision}
+              onRestoreRevision={onRestoreRevision}
+              onExitRevisionView={onExitRevisionView}
+              onUpdateRevision={onUpdateRevision}
+              onSetAutoSave={onSetAutoSave}
+              autoSaveInterval={autoSaveInterval}
+              documentTitle={documentTitle}
+            />
+            
             <Button
               variant={trackChanges ? "default" : "outline"}
               size="sm"
@@ -294,6 +342,24 @@ const TextEditor: React.FC<TextEditorProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className={showChangeTracking ? "md:col-span-2" : "md:col-span-3"}>
+            {isViewingRevision && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md px-4 py-2 mb-4 flex justify-between items-center">
+                <div>
+                  <strong>Revision Preview:</strong> {currentRevision?.label || new Date(currentRevision?.timestamp || '').toLocaleString()}
+                </div>
+                <div className="flex space-x-2">
+                  <Button size="sm" variant="outline" onClick={onExitRevisionView}>
+                    Exit Preview
+                  </Button>
+                  {currentRevision && (
+                    <Button size="sm" onClick={() => onRestoreRevision(currentRevision.id)}>
+                      Restore This Version
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <EditableContent
               editorRef={actualEditorRef}
               onInput={handleEditorInput}
@@ -322,7 +388,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
           )}
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mt-4">
           <Button
             variant={displayMode === 'inline' ? 'default' : 'outline'}
             size="sm"
