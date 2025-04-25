@@ -5,9 +5,10 @@ import { useDocumentState } from './document/useDocumentState';
 import { useDocumentOperations } from './document/useDocumentOperations';
 import { useRevisionOperations } from './document/useRevisionOperations';
 import { useAutoSave } from './document/useAutoSave';
-import { saveRevision } from '@/utils/documentStorage';
+import { saveRevision, getDocumentRevisions } from '@/utils/documentStorage';
 import { toast } from 'sonner';
 import { finalizeDraft, saveDocument } from '@/utils/documentStorage';
+import { UserDocument } from '@/utils/documentTypes'; // Import the UserDocument type
 
 export function useDocument() {
   const location = useLocation();
@@ -73,8 +74,10 @@ export function useDocument() {
     if (!state.currentDocument?.isDraft) return;
     
     const finalizedDoc = finalizeDraft(state.currentDocument.id);
-    state.setCurrentDocument(finalizedDoc);
-    toast.success("Document has been finalized");
+    if (finalizedDoc) {
+      state.setCurrentDocument(finalizedDoc);
+      toast.success("Document has been finalized");
+    }
   };
   
   const exitRevisionView = () => {
