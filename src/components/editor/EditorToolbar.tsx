@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import TextFormatting from '../toolbar/TextFormatting';
 import { ListFormatting } from '../toolbar/ListFormatting';
@@ -8,7 +7,7 @@ import { ExportTools } from '../toolbar/ExportTools';
 import { Separator } from '../ui/separator';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { FormatToolbarProps } from '@/components/FormatToolbar';
+import { FormatToolbarProps } from '@/types/editor';
 
 export function EditorToolbar({
   onFormatClick,
