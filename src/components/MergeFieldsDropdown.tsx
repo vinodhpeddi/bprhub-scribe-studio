@@ -1,34 +1,53 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
-import { availableMergeFields } from '@/utils/mergeFields';
+} from '@/components/ui/dropdown-menu';
+import { Database, ChevronDown } from 'lucide-react';
+import { getMergeFields } from '@/utils/mergeFields';
 
-interface MergeFieldsDropdownProps {
+export interface MergeFieldsDropdownProps {
   onInsertField: (field: string) => void;
+  disabled?: boolean; // Added disabled prop
 }
 
-const MergeFieldsDropdown: React.FC<MergeFieldsDropdownProps> = ({ onInsertField }) => {
+const MergeFieldsDropdown: React.FC<MergeFieldsDropdownProps> = ({ 
+  onInsertField,
+  disabled = false // Default to enabled
+}) => {
+  const [open, setOpen] = useState(false);
+  const mergeFields = getMergeFields();
+  
+  const handleSelectField = (field: string) => {
+    onInsertField(field);
+    setOpen(false);
+  };
+  
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-9 w-9 p-0" title="Insert Merge Field">
-          <FileText className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          className="flex items-center h-8" 
+          size="sm"
+          disabled={disabled}
+        >
+          <Database className="h-4 w-4 mr-1" />
+          <span>Merge Fields</span>
+          <ChevronDown className="h-3 w-3 ml-1" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
-        {availableMergeFields.map((field) => (
-          <DropdownMenuItem
-            key={field.key}
-            onClick={() => onInsertField(`{{${field.key}}}`)}
+        {mergeFields.map((field) => (
+          <DropdownMenuItem 
+            key={field.name} 
+            onClick={() => handleSelectField(field.tag)}
           >
-            {field.label}
+            {field.name}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

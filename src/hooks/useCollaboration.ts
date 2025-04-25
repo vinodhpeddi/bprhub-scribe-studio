@@ -54,12 +54,14 @@ export function useCollaboration(documentId: string) {
     element?: string,
     position?: { start: number; end: number }
   ) => {
+    // Fixed: Include documentId in the change object
     return addChange(documentId, {
       type,
       content,
       originalContent,
       element,
-      position
+      position,
+      documentId // Add documentId to comply with the type
     });
   }, [documentId]);
 

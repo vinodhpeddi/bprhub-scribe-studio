@@ -1,90 +1,97 @@
 
-import React, { useState, useEffect } from 'react';
-import { TextFormatting } from './toolbar/TextFormatting';
-import { ListFormatting } from './toolbar/ListFormatting';
-import { HeadingControls } from './toolbar/HeadingControls';
-import { InsertTools } from './toolbar/InsertTools';
-import { ExportTools } from './toolbar/ExportTools';
-import AIAssistantPanel from './AIAssistantPanel';
-import { toast } from 'sonner';
-import { Maximize, Minimize } from 'lucide-react';
-import IconButton from './ui/IconButton';
+import React, { useState } from 'react';
+import TextFormatting from './toolbar/TextFormatting';
+import ListFormatting from './toolbar/ListFormatting';
+import HeadingControls from './toolbar/HeadingControls';
+import InsertTools from './toolbar/InsertTools';
+import ExportTools from './toolbar/ExportTools';
+import { Separator } from './ui/separator';
+import { Maximize2, Minimize2 } from 'lucide-react';
+import { Button } from './ui/button';
 
-interface FormatToolbarProps {
+export interface FormatToolbarProps {
   onFormatClick: (formatType: string, value?: string) => void;
   activeFormats: string[];
   documentContent: string;
-  documentTitle: string;
-  onToggleFullScreen: () => void;
-  isFullScreen: boolean;
-  operations: {
-    insertTable: (isLayout?: boolean) => void;
-    insertImage: () => void;
-  };
+  documentTitle?: string;
+  onToggleFullScreen?: () => void;
+  isFullScreen?: boolean;
+  operations?: any;
   children?: React.ReactNode;
+  disabled?: boolean; // Added disabled prop
 }
 
 const FormatToolbar: React.FC<FormatToolbarProps> = ({
   onFormatClick,
   activeFormats,
   documentContent,
-  documentTitle,
+  documentTitle = 'Document',
   onToggleFullScreen,
-  isFullScreen,
+  isFullScreen = false,
   operations,
-  children
+  children,
+  disabled = false // Default to enabled
 }) => {
-  const [isSticky, setIsSticky] = useState(false);
+  const [showDropdown, setShowDropdown] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const offset = window.scrollY;
-      setIsSticky(offset > 100);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
+  const toggleDropdown = (dropdown: string) => {
+    setShowDropdown(showDropdown === dropdown ? null : dropdown);
+  };
 
   return (
-    <div 
-      className={`flex flex-wrap items-center border rounded-md p-1 bg-white z-10 transition-all duration-300 mb-2 gap-1 ${
-        isSticky ? 'sticky top-0 shadow-md animate-slide-in' : ''
-      }`}
-    >
-      <HeadingControls onFormatClick={onFormatClick} />
-      <TextFormatting onFormatClick={onFormatClick} activeFormats={activeFormats} />
-      
-      <div className="h-5 w-px bg-gray-200 mx-1" />
-      
-      <ListFormatting onFormatClick={onFormatClick} activeFormats={activeFormats} />
-      
-      <div className="h-5 w-px bg-gray-200 mx-1" />
-      
-      <InsertTools 
-        onFormatClick={onFormatClick} 
-        onInsertTable={operations.insertTable}
-        onInsertImage={operations.insertImage}
-      />
-      
-      <div className="h-5 w-px bg-gray-200 mx-1" />
-      
-      <AIAssistantPanel onActionSelect={(actionId) => toast.info('Please connect to Supabase to use AI features')} />
-      
-      <ExportTools documentContent={documentContent} documentTitle={documentTitle} />
-      
-      <div className="h-5 w-px bg-gray-200 mx-1" />
-      
-      <IconButton
-        icon={isFullScreen ? <Minimize size={18} /> : <Maximize size={18} />}
-        label={isFullScreen ? "Exit Full Screen" : "Full Screen"}
-        onClick={onToggleFullScreen}
-      />
-      
-      {children}
+    <div className="bg-white border rounded-md mb-4 shadow-sm">
+      <div className="p-1 flex flex-wrap items-center gap-1">
+        <TextFormatting onFormatClick={onFormatClick} activeFormats={activeFormats} disabled={disabled} />
+        
+        <Separator orientation="vertical" className="mx-1 h-6" />
+        
+        <ListFormatting onFormatClick={onFormatClick} activeFormats={activeFormats} disabled={disabled} />
+        
+        <Separator orientation="vertical" className="mx-1 h-6" />
+        
+        <HeadingControls onFormatClick={onFormatClick} disabled={disabled} />
+        
+        <Separator orientation="vertical" className="mx-1 h-6" />
+        
+        <InsertTools 
+          onFormatClick={onFormatClick} 
+          operations={operations} 
+          disabled={disabled}
+        />
+        
+        <Separator orientation="vertical" className="mx-1 h-6" />
+        
+        <ExportTools 
+          documentContent={documentContent} 
+          documentTitle={documentTitle}
+          disabled={disabled}
+        />
+        
+        {/* Additional tools provided as children */}
+        {children && (
+          <>
+            <Separator orientation="vertical" className="mx-1 h-6" />
+            {children}
+          </>
+        )}
+        
+        <div className="ml-auto">
+          {onToggleFullScreen && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onToggleFullScreen}
+              className="h-8 w-8"
+            >
+              {isFullScreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

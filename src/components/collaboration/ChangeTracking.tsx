@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   DocumentChange, 
@@ -116,10 +115,10 @@ const ChangeTracking: React.FC<ChangeTrackingProps> = ({
     
     addComment(documentId, {
       content: commentText[changeId],
-      changeId
+      changeId,
+      documentId
     });
     
-    // Clear comment text
     setCommentText(prev => ({
       ...prev,
       [changeId]: ''
