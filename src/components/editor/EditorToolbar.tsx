@@ -1,27 +1,16 @@
 
 import React, { useState } from 'react';
-import TextFormatting from './toolbar/TextFormatting';
-import { ListFormatting } from './toolbar/ListFormatting';
-import { HeadingControls } from './toolbar/HeadingControls';
-import { InsertTools } from './toolbar/InsertTools';
-import { ExportTools } from './toolbar/ExportTools';
-import { Separator } from './ui/separator';
+import TextFormatting from '../toolbar/TextFormatting';
+import { ListFormatting } from '../toolbar/ListFormatting';
+import { HeadingControls } from '../toolbar/HeadingControls';
+import { InsertTools } from '../toolbar/InsertTools';
+import { ExportTools } from '../toolbar/ExportTools';
+import { Separator } from '../ui/separator';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
+import { FormatToolbarProps } from '@/components/FormatToolbar';
 
-export interface FormatToolbarProps {
-  onFormatClick: (formatType: string, value?: string) => void;
-  activeFormats: string[];
-  documentContent: string;
-  documentTitle?: string;
-  onToggleFullScreen?: () => void;
-  isFullScreen?: boolean;
-  operations?: any;
-  children?: React.ReactNode;
-  disabled?: boolean; // Added disabled prop
-}
-
-const FormatToolbar: React.FC<FormatToolbarProps> = ({
+export function EditorToolbar({
   onFormatClick,
   activeFormats,
   documentContent,
@@ -30,13 +19,9 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
   isFullScreen = false,
   operations,
   children,
-  disabled = false // Default to enabled
-}) => {
+  disabled = false
+}: FormatToolbarProps) {
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
-
-  const toggleDropdown = (dropdown: string) => {
-    setShowDropdown(showDropdown === dropdown ? null : dropdown);
-  };
 
   return (
     <div className="bg-white border rounded-md mb-4 shadow-sm">
@@ -68,7 +53,6 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
           disabled={disabled}
         />
         
-        {/* Additional tools provided as children */}
         {children && (
           <>
             <Separator orientation="vertical" className="mx-1 h-6" />
@@ -95,6 +79,4 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
       </div>
     </div>
   );
-};
-
-export default FormatToolbar;
+}
