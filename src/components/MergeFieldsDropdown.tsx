@@ -8,27 +8,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Database, ChevronDown } from 'lucide-react';
-import { MergeField } from '@/utils/mergeFields';
+import { MergeField, availableMergeFields } from '@/utils/mergeFields';
 
 export interface MergeFieldsDropdownProps {
   onInsertField: (field: string) => void;
-  disabled?: boolean; // Added disabled prop
+  disabled?: boolean;
 }
 
 const MergeFieldsDropdown: React.FC<MergeFieldsDropdownProps> = ({ 
   onInsertField,
-  disabled = false // Default to enabled
+  disabled = false
 }) => {
   const [open, setOpen] = useState(false);
   
-  // Hardcoded merge fields since the getMergeFields function doesn't exist
-  const mergeFields: MergeField[] = [
-    { name: 'First Name', tag: '{{firstName}}' },
-    { name: 'Last Name', tag: '{{lastName}}' },
-    { name: 'Email', tag: '{{email}}' },
-    { name: 'Company', tag: '{{company}}' },
-    { name: 'Phone', tag: '{{phone}}' }
-  ];
+  // Use the availableMergeFields imported from the utility file
+  // which matches the MergeField interface
   
   const handleSelectField = (field: string) => {
     onInsertField(field);
@@ -50,12 +44,12 @@ const MergeFieldsDropdown: React.FC<MergeFieldsDropdownProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
-        {mergeFields.map((field) => (
+        {availableMergeFields.map((field) => (
           <DropdownMenuItem 
-            key={field.name} 
-            onClick={() => handleSelectField(field.tag)}
+            key={field.key} 
+            onClick={() => handleSelectField(`{{${field.key}}}`)}
           >
-            {field.name}
+            {field.label}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
