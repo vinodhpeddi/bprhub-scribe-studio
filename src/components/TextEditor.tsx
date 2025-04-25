@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import FormatToolbar from './FormatToolbar';
 import { TableProperties } from './TableProperties';
@@ -14,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Eye, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { DocumentChange } from '@/utils/collaborationTypes';
+import { useComments } from '@/hooks/useComments';
+import { Comments } from './comments/Comments';
 
 interface TextEditorProps {
   initialContent: string;
@@ -30,7 +31,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   editorRef,
   documentTitle,
   onSave,
-  documentId = 'temp-doc-id' // Fallback document ID if none provided
+  documentId = 'temp-doc-id'
 }) => {
   const defaultEditorRef = useRef<HTMLDivElement>(null);
   const actualEditorRef = editorRef || defaultEditorRef;
@@ -221,6 +222,17 @@ const TextEditor: React.FC<TextEditorProps> = ({
     content, 
     isReadOnly
   ]);
+  
+  const {
+    comments,
+    displayMode,
+    setDisplayMode,
+    addComment,
+    editComment,
+    deleteComment,
+    resolveComment,
+    reopenComment
+  } = useComments();
 
   return (
     <div className={`w-full transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : ''}`}>
@@ -309,6 +321,40 @@ const TextEditor: React.FC<TextEditorProps> = ({
             </div>
           )}
         </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={displayMode === 'inline' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplayMode('inline')}
+          >
+            Inline Comments
+          </Button>
+          <Button
+            variant={displayMode === 'narrow-sidebar' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplayMode('narrow-sidebar')}
+          >
+            Narrow Sidebar
+          </Button>
+          <Button
+            variant={displayMode === 'wide-sidebar' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplayMode('wide-sidebar')}
+          >
+            Wide Sidebar
+          </Button>
+        </div>
+        
+        <Comments
+          comments={comments}
+          displayMode={displayMode}
+          onAddComment={addComment}
+          onEditComment={editComment}
+          onDeleteComment={deleteComment}
+          onResolveComment={resolveComment}
+          onReopenComment={reopenComment}
+        />
       </div>
     </div>
   );
