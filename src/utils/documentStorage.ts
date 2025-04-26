@@ -314,27 +314,3 @@ export function getRevisionById(documentId: string, revisionId: string): Revisio
     return null;
   }
 }
-
-// Utility function to estimate the size of a string in bytes
-function getStringByteSize(str: string): number {
-  // A rough estimate: in UTF-16, each character is 2 bytes
-  return str.length * 2;
-}
-
-// Helper function to clean up storage when needed
-export function performStorageCleanup(): void {
-  try {
-    // Clear automatic revisions first
-    const docs = getAllDocuments();
-    docs.forEach(doc => {
-      const revisions = getDocumentRevisions(doc.id);
-      const manualRevisions = revisions.filter(rev => !rev.isAuto);
-      if (manualRevisions.length !== revisions.length) {
-        // Keep only manual revisions
-        localStorage.setItem(`revisions_${doc.id}`, JSON.stringify(manualRevisions));
-      }
-    });
-  } catch (error) {
-    console.error('Error performing storage cleanup:', error);
-  }
-}
