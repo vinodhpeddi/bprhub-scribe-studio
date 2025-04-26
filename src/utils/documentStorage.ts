@@ -1,23 +1,74 @@
-
 import { UserDocument } from './documentTypes';
 import { acquireLock, releaseLock, getCurrentUser } from './collaborationService';
 import { Revision } from './commentTypes';
 import { v4 as uuidv4 } from 'uuid';
 
+// Maximum document count to keep in local storage
+const MAX_DOCUMENT_COUNT = 10;
+
 export function saveDocument(document: UserDocument): void {
   try {
     const storedDocs = localStorage.getItem('userDocuments');
-    const docs: UserDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
+    let docs: UserDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
     
     const existingIndex = docs.findIndex(doc => doc.id === document.id);
     
     if (existingIndex >= 0) {
       docs[existingIndex] = document;
     } else {
+      // If we're at the storage limit, remove the oldest document
+      if (docs.length >= MAX_DOCUMENT_COUNT) {
+        // Sort by lastModified (oldest first)
+        docs.sort((a, b) => 
+          new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime()
+        );
+        
+        // Remove the oldest document and its revisions
+        const oldestDoc = docs.shift();
+        if (oldestDoc) {
+          deleteDocumentRevisions(oldestDoc.id);
+        }
+      }
+      
       docs.push(document);
     }
     
-    localStorage.setItem('userDocuments', JSON.stringify(docs));
+    try {
+      localStorage.setItem('userDocuments', JSON.stringify(docs));
+    } catch (error) {
+      // If we still hit quota errors, perform aggressive cleanup
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('Storage quota exceeded, performing aggressive cleanup');
+        
+        // Remove half of the oldest documents
+        if (docs.length > 1) {
+          docs.sort((a, b) => 
+            new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime()
+          );
+          
+          const removeCount = Math.max(1, Math.floor(docs.length / 2));
+          const removedDocs = docs.splice(0, removeCount);
+          
+          // Clean up revisions for removed docs
+          removedDocs.forEach(doc => {
+            deleteDocumentRevisions(doc.id);
+          });
+          
+          // Try to save again with reduced documents
+          localStorage.setItem('userDocuments', JSON.stringify(docs));
+        } else {
+          // If we only have one document and still hit quota, truncate its content
+          if (docs.length === 1 && docs[0].content.length > 1000) {
+            docs[0].content = docs[0].content.substring(0, 1000) + 
+              '<p><em>Content truncated due to storage limitations</em></p>';
+            localStorage.setItem('userDocuments', JSON.stringify(docs));
+          }
+          throw error; // Re-throw if we can't resolve the issue
+        }
+      } else {
+        throw error; // Re-throw non-quota errors
+      }
+    }
   } catch (error) {
     console.error('Error saving document:', error);
     throw error;
@@ -75,14 +126,17 @@ export function createNewDraft(template: import('./documentTypes').DocumentTempl
 }
 
 export function finalizeDraft(document: UserDocument): UserDocument {
-  return {
+  const finalizedDoc = {
     ...document,
     isDraft: false,
     lastModified: new Date().toISOString()
   };
+  
+  // Save the finalized document
+  saveDocument(finalizedDoc);
+  return finalizedDoc;
 }
 
-// New methods for collaboration
 export function lockDocument(document: UserDocument): boolean {
   const lock = acquireLock(document.id);
   return lock !== null;
@@ -112,7 +166,6 @@ export function isDocumentLocked(documentId: string): boolean {
   }
 }
 
-// New revision history functionality
 export function getDocumentRevisions(documentId: string): Revision[] {
   try {
     const storedRevisions = localStorage.getItem(`revisions_${documentId}`);
@@ -141,11 +194,33 @@ export function saveRevision(documentId: string, content: string, title: string,
       description
     };
     
-    // Add to revisions list
+    // Limit the number of revisions to prevent storage overflow
+    // Keep only the 20 most recent revisions
     revisions.push(newRevision);
+    const MAX_REVISIONS = 20;
+    
+    const limitedRevisions = revisions.length > MAX_REVISIONS ? 
+      revisions.slice(revisions.length - MAX_REVISIONS) : 
+      revisions;
     
     // Save to local storage
-    localStorage.setItem(`revisions_${documentId}`, JSON.stringify(revisions));
+    try {
+      localStorage.setItem(`revisions_${documentId}`, JSON.stringify(limitedRevisions));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('Storage quota exceeded, removing oldest revisions');
+        
+        // Remove the oldest half of revisions
+        const reducedRevisions = revisions
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+          .slice(Math.floor(revisions.length / 2));
+        
+        reducedRevisions.push(newRevision);
+        localStorage.setItem(`revisions_${documentId}`, JSON.stringify(reducedRevisions));
+      } else {
+        throw error;
+      }
+    }
     
     return newRevision;
   } catch (error) {
@@ -192,4 +267,3 @@ export function getRevisionById(documentId: string, revisionId: string): Revisio
     return null;
   }
 }
-

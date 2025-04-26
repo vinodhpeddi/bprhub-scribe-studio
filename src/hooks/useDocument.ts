@@ -65,18 +65,28 @@ export function useDocument() {
       lastModified: new Date().toISOString()
     };
     
-    saveDocument(updatedDocument);
-    state.setCurrentDocument(updatedDocument);
-    toast.success("Document saved successfully");
+    try {
+      saveDocument(updatedDocument);
+      state.setCurrentDocument(updatedDocument);
+      toast.success("Document saved successfully");
+    } catch (error) {
+      console.error('Error saving document:', error);
+      toast.error("Failed to save document. Storage quota may be exceeded.");
+    }
   };
   
   const handleFinalizeDocument = () => {
     if (!state.currentDocument?.isDraft) return;
     
-    const finalizedDoc = finalizeDraft(state.currentDocument.id);
-    if (finalizedDoc) {
-      state.setCurrentDocument(finalizedDoc);
-      toast.success("Document has been finalized");
+    try {
+      const finalizedDoc = finalizeDraft(state.currentDocument);
+      if (finalizedDoc) {
+        state.setCurrentDocument(finalizedDoc);
+        toast.success("Document has been finalized");
+      }
+    } catch (error) {
+      console.error('Error finalizing document:', error);
+      toast.error("Failed to finalize document");
     }
   };
   
