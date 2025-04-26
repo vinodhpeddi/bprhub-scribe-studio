@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useDocumentState } from './document/useDocumentState';
@@ -35,14 +36,15 @@ export function useDocument() {
       state.autoSaveIntervalRef.current = setInterval(() => {
         if (state.currentDocument) {
           try {
-            saveRevision(
+            console.log("Attempting auto-save with content size:", state.contentRef.current.length);
+            const revision = saveRevision(
               state.currentDocument.id,
               state.contentRef.current,
               state.titleRef.current,
               true,
               `Auto-save at ${new Date().toLocaleTimeString()}`
             );
-            console.log("Document auto-saved successfully");
+            console.log("Document auto-saved successfully, revision ID:", revision.id);
           } catch (error) {
             console.error("Auto-save failed, will attempt storage cleanup:", error);
             performStorageCleanup();
@@ -70,6 +72,7 @@ export function useDocument() {
     };
     
     try {
+      console.log("Saving document with content size:", updatedDocument.content.length);
       saveDocument(updatedDocument);
       state.setCurrentDocument(updatedDocument);
       toast.success("Document saved successfully");

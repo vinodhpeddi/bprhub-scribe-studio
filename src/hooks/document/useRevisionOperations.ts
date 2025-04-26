@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { saveRevision, getDocumentRevisions } from '@/utils/documentStorage';
+import { saveRevision, getDocumentRevisions, updateRevisionLabel } from '@/utils/documentStorage';
 import { toast } from 'sonner';
 
 export function useRevisionOperations(state: ReturnType<typeof import('./useDocumentState').useDocumentState>) {
@@ -11,6 +11,7 @@ export function useRevisionOperations(state: ReturnType<typeof import('./useDocu
     }
     
     try {
+      console.log("Saving revision with content size:", state.contentRef.current.length);
       const revision = saveRevision(
         state.currentDocument.id,
         state.contentRef.current,
@@ -54,8 +55,31 @@ export function useRevisionOperations(state: ReturnType<typeof import('./useDocu
     toast.info(`Viewing revision from ${new Date(revision.timestamp).toLocaleString()}`);
   }, [state]);
 
+  const updateRevision = useCallback((revisionId: string, label: string, description?: string) => {
+    if (!state.currentDocument) {
+      toast.error('No active document');
+      return;
+    }
+    
+    try {
+      updateRevisionLabel(state.currentDocument.id, revisionId, label, description);
+      
+      // Update the local state
+      const updatedRevisions = state.revisions.map(rev => 
+        rev.id === revisionId ? { ...rev, label, description: description || rev.description } : rev
+      );
+      state.setRevisions(updatedRevisions);
+      
+      toast.success('Revision updated successfully');
+    } catch (error) {
+      console.error('Error updating revision:', error);
+      toast.error('Failed to update revision');
+    }
+  }, [state]);
+
   return {
     saveDocumentRevision,
-    viewRevision
+    viewRevision,
+    updateRevision
   };
 }
