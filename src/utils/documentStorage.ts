@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Maximum document count to keep in local storage
 const MAX_DOCUMENT_COUNT = 10;
+// Maximum number of revisions per document
+const MAX_REVISIONS_PER_DOCUMENT = 10;
+// Maximum content size for a single revision in characters
+const MAX_REVISION_CONTENT_SIZE = 100000;
 
 export function saveDocument(document: UserDocument): void {
   try {
@@ -181,11 +185,19 @@ export function saveRevision(documentId: string, content: string, title: string,
     const user = getCurrentUser();
     const revisions = getDocumentRevisions(documentId);
     
+    // Truncate content if it's too large to avoid quota issues
+    let truncatedContent = content;
+    if (content.length > MAX_REVISION_CONTENT_SIZE) {
+      console.warn(`Revision content exceeds max size (${content.length} > ${MAX_REVISION_CONTENT_SIZE}), truncating`);
+      truncatedContent = content.substring(0, MAX_REVISION_CONTENT_SIZE) + 
+        '<p><em>Content truncated due to storage limitations</em></p>';
+    }
+    
     // Create new revision
     const newRevision: Revision = {
       id: uuidv4(),
       timestamp: new Date().toISOString(),
-      content,
+      content: truncatedContent,
       title,
       authorId: user.id,
       authorName: user.name,
@@ -195,37 +207,74 @@ export function saveRevision(documentId: string, content: string, title: string,
     };
     
     // Limit the number of revisions to prevent storage overflow
-    // Keep only the 20 most recent revisions
+    // Keep only the most recent revisions up to MAX_REVISIONS_PER_DOCUMENT
     revisions.push(newRevision);
-    const MAX_REVISIONS = 20;
     
-    const limitedRevisions = revisions.length > MAX_REVISIONS ? 
-      revisions.slice(revisions.length - MAX_REVISIONS) : 
+    const limitedRevisions = revisions.length > MAX_REVISIONS_PER_DOCUMENT ? 
+      revisions.slice(revisions.length - MAX_REVISIONS_PER_DOCUMENT) : 
       revisions;
     
-    // Save to local storage
+    // Try to save to local storage
     try {
       localStorage.setItem(`revisions_${documentId}`, JSON.stringify(limitedRevisions));
     } catch (error) {
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        console.warn('Storage quota exceeded, removing oldest revisions');
+        console.warn('Storage quota exceeded for revisions, performing cleanup');
         
-        // Remove the oldest half of revisions
-        const reducedRevisions = revisions
-          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-          .slice(Math.floor(revisions.length / 2));
+        // First try: Keep only 5 revisions
+        if (revisions.length > 5) {
+          const reducedRevisions = revisions
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 5);
+          
+          try {
+            localStorage.setItem(`revisions_${documentId}`, JSON.stringify(reducedRevisions));
+            return newRevision;
+          } catch (err) {
+            // Continue to more aggressive cleanup
+            console.warn('Still exceeding quota with 5 revisions, reducing content size');
+          }
+        }
         
-        reducedRevisions.push(newRevision);
-        localStorage.setItem(`revisions_${documentId}`, JSON.stringify(reducedRevisions));
+        // Second try: Keep only the newest revision but truncate its content further
+        try {
+          const singleRevision = {
+            ...newRevision,
+            content: newRevision.content.substring(0, 5000) + 
+                    '<p><em>Content heavily truncated due to storage limitations</em></p>'
+          };
+          localStorage.setItem(`revisions_${documentId}`, JSON.stringify([singleRevision]));
+          return singleRevision;
+        } catch (err) {
+          // Last resort: Clear all revisions and save just a stub
+          console.error('Failed to save even with content truncation, clearing all revisions');
+          const stubRevision = {
+            ...newRevision,
+            content: '<p>Unable to save content due to browser storage limitations.</p>'
+          };
+          localStorage.setItem(`revisions_${documentId}`, JSON.stringify([stubRevision]));
+          return stubRevision;
+        }
       } else {
-        throw error;
+        throw error; // Re-throw non-quota errors
       }
     }
     
     return newRevision;
   } catch (error) {
     console.error('Error saving revision:', error);
-    throw error;
+    // Return a minimal revision object to prevent further errors
+    const errorRevision: Revision = {
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      content: '<p>Error saving revision. Storage limit may be exceeded.</p>',
+      title: title || 'Error Revision',
+      authorId: getCurrentUser().id,
+      authorName: getCurrentUser().name,
+      isAuto: false,
+      label: 'Error Saving'
+    };
+    return errorRevision;
   }
 }
 
@@ -265,5 +314,29 @@ export function getRevisionById(documentId: string, revisionId: string): Revisio
   } catch (error) {
     console.error('Error getting revision:', error);
     return null;
+  }
+}
+
+// Utility function to estimate the size of a string in bytes
+function getStringByteSize(str: string): number {
+  // A rough estimate: in UTF-16, each character is 2 bytes
+  return str.length * 2;
+}
+
+// Helper function to clean up storage when needed
+export function performStorageCleanup(): void {
+  try {
+    // Clear automatic revisions first
+    const docs = getAllDocuments();
+    docs.forEach(doc => {
+      const revisions = getDocumentRevisions(doc.id);
+      const manualRevisions = revisions.filter(rev => !rev.isAuto);
+      if (manualRevisions.length !== revisions.length) {
+        // Keep only manual revisions
+        localStorage.setItem(`revisions_${doc.id}`, JSON.stringify(manualRevisions));
+      }
+    });
+  } catch (error) {
+    console.error('Error performing storage cleanup:', error);
   }
 }

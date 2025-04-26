@@ -1,11 +1,10 @@
-
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useDocumentState } from './document/useDocumentState';
 import { useDocumentOperations } from './document/useDocumentOperations';
 import { useRevisionOperations } from './document/useRevisionOperations';
 import { useAutoSave } from './document/useAutoSave';
-import { saveRevision, getDocumentRevisions } from '@/utils/documentStorage';
+import { saveRevision, getDocumentRevisions, performStorageCleanup } from '@/utils/documentStorage';
 import { toast } from 'sonner';
 import { finalizeDraft, saveDocument } from '@/utils/documentStorage';
 import { UserDocument } from '@/utils/documentTypes';
@@ -18,7 +17,7 @@ export function useDocument() {
   const { setAutoSaveConfig } = useAutoSave(state);
 
   useEffect(() => {
-    const existingDoc = location.state?.document as UserDocument;
+    const existingDoc = location.state?.document as UserDocument | undefined;
     if (existingDoc) {
       handleDocumentSelect(existingDoc);
     } else {
@@ -35,14 +34,19 @@ export function useDocument() {
       
       state.autoSaveIntervalRef.current = setInterval(() => {
         if (state.currentDocument) {
-          saveRevision(
-            state.currentDocument.id,
-            state.contentRef.current,
-            state.titleRef.current,
-            true,
-            `Auto-save at ${new Date().toLocaleTimeString()}`
-          );
-          toast.info("Document auto-saved");
+          try {
+            saveRevision(
+              state.currentDocument.id,
+              state.contentRef.current,
+              state.titleRef.current,
+              true,
+              `Auto-save at ${new Date().toLocaleTimeString()}`
+            );
+            console.log("Document auto-saved successfully");
+          } catch (error) {
+            console.error("Auto-save failed, will attempt storage cleanup:", error);
+            performStorageCleanup();
+          }
         }
       }, state.autoSaveInterval * 60 * 1000);
     }
@@ -69,9 +73,20 @@ export function useDocument() {
       saveDocument(updatedDocument);
       state.setCurrentDocument(updatedDocument);
       toast.success("Document saved successfully");
+      
+      // After successful document save, also save a revision
+      try {
+        saveDocumentRevision(`Save at ${new Date().toLocaleTimeString()}`);
+      } catch (error) {
+        console.error('Failed to save revision after document save:', error);
+        // Don't show error to user since the document itself was saved
+      }
     } catch (error) {
       console.error('Error saving document:', error);
       toast.error("Failed to save document. Storage quota may be exceeded.");
+      
+      // Try to free up storage
+      performStorageCleanup();
     }
   };
   

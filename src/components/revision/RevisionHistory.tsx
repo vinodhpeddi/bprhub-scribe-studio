@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { formatDistanceToNow } from 'date-fns';
-import { Pencil, Save, Eye, RotateCcw, ArrowLeft, Clock, Book, BookOpen, History } from 'lucide-react';
+import { Pencil, Save, Eye, RotateCcw, ArrowLeft, Clock, Book, BookOpen, History, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface RevisionHistoryProps {
   revisions: Revision[];
@@ -50,11 +50,36 @@ export function RevisionHistory({
   const [selectedAutoSaveInterval, setSelectedAutoSaveInterval] = useState<string>(
     autoSaveInterval === null ? 'off' : autoSaveInterval.toString()
   );
+  const [showStorageWarning, setShowStorageWarning] = useState(false);
 
-  // Sort revisions by timestamp (newest first)
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        let totalSize = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) {
+            const value = localStorage.getItem(key) || '';
+            totalSize += key.length + value.length;
+          }
+        }
+        
+        const WARN_THRESHOLD = 4 * 1024 * 1024;
+        if (totalSize * 2 > WARN_THRESHOLD) {
+          setShowStorageWarning(true);
+        }
+      } catch (error) {
+        console.error('Error checking storage usage:', error);
+      }
+    }
+  }, [isOpen]);
+
   const sortedRevisions = [...revisions].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
+
+  const autoSaveCount = revisions.filter(rev => rev.isAuto).length;
+  const manualCount = revisions.length - autoSaveCount;
 
   const handleSaveNewRevision = () => {
     onSaveRevision(newRevisionLabel || undefined, newRevisionDescription || undefined);
@@ -108,6 +133,15 @@ export function RevisionHistory({
             </DialogTitle>
           </DialogHeader>
 
+          {showStorageWarning && (
+            <Alert variant="warning" className="mb-4">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <AlertDescription>
+                Storage usage is high. Consider deleting unused documents or reducing auto-save frequency to prevent data loss.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {isViewingRevision && (
             <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-3 mb-4">
               <div className="flex items-center justify-between">
@@ -148,7 +182,12 @@ export function RevisionHistory({
           <div className="flex md:flex-row flex-col gap-4 h-full">
             <div className="md:w-3/4 space-y-6 overflow-hidden flex flex-col">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Document Versions</h3>
+                <div>
+                  <h3 className="text-lg font-medium">Document Versions</h3>
+                  <div className="text-sm text-gray-500">
+                    {revisions.length} versions ({manualCount} manual, {autoSaveCount} auto-save)
+                  </div>
+                </div>
                 <div className="flex items-center space-x-2">
                   <Button 
                     variant="outline" 
@@ -306,7 +345,6 @@ export function RevisionHistory({
         </DialogContent>
       </Dialog>
 
-      {/* Auto-save settings dialog */}
       <Dialog open={isAutoSaveDialogOpen} onOpenChange={setIsAutoSaveDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -324,10 +362,6 @@ export function RevisionHistory({
                 <Label htmlFor="off">Off</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="1" id="1min" />
-                <Label htmlFor="1min">Every minute</Label>
-              </div>
-              <div className="flex items-center space-x-2">
                 <RadioGroupItem value="5" id="5min" />
                 <Label htmlFor="5min">Every 5 minutes</Label>
               </div>
@@ -340,6 +374,10 @@ export function RevisionHistory({
                 <Label htmlFor="30min">Every 30 minutes</Label>
               </div>
             </RadioGroup>
+            <div className="mt-3 text-sm text-amber-600">
+              <AlertCircle className="h-4 w-4 inline mr-1" />
+              Frequent auto-saves may cause storage issues. Consider using 10 or 30 minutes.
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={handleSaveAutoSaveSettings}>Save Settings</Button>
