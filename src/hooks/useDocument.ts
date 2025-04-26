@@ -8,7 +8,7 @@ import { useAutoSave } from './document/useAutoSave';
 import { saveRevision, getDocumentRevisions } from '@/utils/documentStorage';
 import { toast } from 'sonner';
 import { finalizeDraft, saveDocument } from '@/utils/documentStorage';
-import { UserDocument } from '@/utils/documentTypes'; // Import the UserDocument type
+import { UserDocument } from '@/utils/documentTypes';
 
 export function useDocument() {
   const location = useLocation();
@@ -18,7 +18,7 @@ export function useDocument() {
   const { setAutoSaveConfig } = useAutoSave(state);
 
   useEffect(() => {
-    const existingDoc = location.state?.document;
+    const existingDoc = location.state?.document as UserDocument;
     if (existingDoc) {
       handleDocumentSelect(existingDoc);
     } else {
