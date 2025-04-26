@@ -2,13 +2,14 @@ import { UserDocument } from './documentTypes';
 import { acquireLock, releaseLock, getCurrentUser } from './collaborationService';
 import { Revision } from './commentTypes';
 import { v4 as uuidv4 } from 'uuid';
-
-// Maximum document count to keep in local storage
-const MAX_DOCUMENT_COUNT = 10;
-// Maximum number of revisions per document
-const MAX_REVISIONS_PER_DOCUMENT = 10;
-// Maximum content size for a single revision in characters
-const MAX_REVISION_CONTENT_SIZE = 100000;
+import { 
+  MAX_DOCUMENT_COUNT, 
+  MAX_REVISIONS_PER_DOCUMENT, 
+  MAX_REVISION_CONTENT_SIZE,
+  cleanupStorage,
+  getAllDocuments,
+  getStringByteSize
+} from './storage/documentStorageUtils';
 
 export function saveDocument(document: UserDocument): void {
   try {
@@ -79,15 +80,12 @@ export function saveDocument(document: UserDocument): void {
   }
 }
 
-export function getAllDocuments(): UserDocument[] {
-  try {
-    const storedDocs = localStorage.getItem('userDocuments');
-    return storedDocs ? JSON.parse(storedDocs) : [];
-  } catch (error) {
-    console.error('Error getting documents:', error);
-    return [];
-  }
-}
+export { 
+  getAllDocuments,
+  cleanupStorage as performStorageCleanup,
+  MAX_DOCUMENT_COUNT,
+  MAX_REVISIONS_PER_DOCUMENT
+};
 
 export function getDocumentById(id: string): UserDocument | null {
   try {
