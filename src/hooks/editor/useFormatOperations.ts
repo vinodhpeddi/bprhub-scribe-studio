@@ -1,4 +1,6 @@
 
+import { EditorOperations } from '@/hooks/useEditorOperations';
+
 export const useFormatOperations = () => {
   const handleFormatClick = (formatType: string, value?: string) => {
     let command = '';
@@ -64,6 +66,18 @@ export const useFormatOperations = () => {
         command = 'fontSize';
         commandValue = value;
         break;
+      case 'align':
+        if (value === 'left') command = 'justifyLeft';
+        else if (value === 'center') command = 'justifyCenter';
+        else if (value === 'right') command = 'justifyRight';
+        else if (value === 'justify') command = 'justifyFull';
+        break;
+      case 'indentList':
+        // Special case handled separately
+        return;
+      case 'outdentList':
+        // Special case handled separately
+        return;
       case 'warning':
       case 'safety':
       case 'info':
@@ -94,6 +108,8 @@ export const useFormatOperations = () => {
         </div><p></p>`;
         document.execCommand('insertHTML', false, boxHtml);
         return;
+      case 'checklist':
+        return;  // Let the insertChecklist operation handle this
       default:
         return;
     }

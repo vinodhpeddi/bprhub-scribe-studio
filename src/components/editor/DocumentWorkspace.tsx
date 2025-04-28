@@ -1,9 +1,14 @@
 
-import React from 'react';
-import TextEditor from '@/components/TextEditor';
-import DocumentOutline from '@/components/DocumentOutline';
-import EditorHeader from '@/components/EditorHeader';
+import React, { useState } from 'react';
 import { UserDocument } from '@/utils/documentTypes';
+import EditorHeader from '@/components/EditorHeader';
+import TextEditor from '@/components/TextEditor';
+import ModelBasedEditor from '@/components/editor/ModelBasedEditor';
+import { RevisionHistory } from '@/components/revision/RevisionHistory';
+import { Button } from '../ui/button';
+import { Save } from 'lucide-react';
+import { Revision } from '@/utils/commentTypes';
+import { toast } from 'sonner';
 
 interface DocumentWorkspaceProps {
   documentTitle: string;
@@ -11,23 +16,22 @@ interface DocumentWorkspaceProps {
   documentContent: string;
   onDocumentContentChange: (content: string) => void;
   currentDocument: UserDocument | null;
-  onSaveDocument: () => void;
-  onFinalizeDocument: () => void;
-  editorRef: React.RefObject<HTMLDivElement>;
-  onImportComplete: (content: string) => void;
-  onDocumentSelect: (document: UserDocument) => void;
-  isDraft: boolean;
-  // Revision props
-  revisions: import('@/utils/commentTypes').Revision[];
-  currentRevision: import('@/utils/commentTypes').Revision | null;
-  isViewingRevision: boolean;
-  onSaveRevision: (label?: string, description?: string) => void;
-  onViewRevision: (revisionId: string) => void;
-  onRestoreRevision: (revisionId: string) => void;
-  onExitRevisionView: () => void;
-  onUpdateRevision: (revisionId: string, label: string, description?: string) => void;
-  onSetAutoSave: (intervalMinutes: number | null) => void;
-  autoSaveInterval: number | null;
+  onSaveDocument: (title?: string, content?: string) => void;
+  onFinalizeDocument?: () => void;
+  editorRef?: React.RefObject<HTMLDivElement>;
+  onImportComplete?: (content: string) => void;
+  onDocumentSelect?: (document: UserDocument) => void;
+  isDraft?: boolean;
+  revisions?: Revision[];
+  currentRevision?: Revision | null;
+  isViewingRevision?: boolean;
+  onSaveRevision?: (label?: string, description?: string) => void;
+  onViewRevision?: (revisionId: string) => void;
+  onRestoreRevision?: (revisionId: string) => void;
+  onExitRevisionView?: () => void;
+  onUpdateRevision?: (revisionId: string, label: string, description?: string) => void;
+  onSetAutoSave?: (intervalMinutes: number | null) => void;
+  autoSaveInterval?: number | null;
 }
 
 const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
@@ -37,48 +41,81 @@ const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
   onDocumentContentChange,
   currentDocument,
   onSaveDocument,
-  onFinalizeDocument,
+  onFinalizeDocument = () => {},
   editorRef,
-  onImportComplete,
-  onDocumentSelect,
-  isDraft,
-  // Revision props
-  revisions,
-  currentRevision,
-  isViewingRevision,
-  onSaveRevision,
-  onViewRevision,
-  onRestoreRevision,
-  onExitRevisionView,
-  onUpdateRevision,
-  onSetAutoSave,
-  autoSaveInterval
+  onImportComplete = () => {},
+  onDocumentSelect = () => {},
+  isDraft = false,
+  revisions = [],
+  currentRevision = null,
+  isViewingRevision = false,
+  onSaveRevision = () => {},
+  onViewRevision = () => {},
+  onRestoreRevision = () => {},
+  onExitRevisionView = () => {},
+  onUpdateRevision = () => {},
+  onSetAutoSave = () => {},
+  autoSaveInterval = null
 }) => {
+  const [useModelEditor, setUseModelEditor] = useState(false);
+
+  const handleSave = () => {
+    onSaveDocument(documentTitle, documentContent);
+    toast.success('Document saved successfully');
+  };
+  
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      <div className="lg:col-span-3 space-y-4">
-        <EditorHeader 
-          documentTitle={documentTitle || ""}
+    <div className="flex flex-col space-y-4">
+      <div className="flex items-center justify-between">
+        <EditorHeader
+          documentTitle={documentTitle}
           onTitleChange={onTitleChange}
-          onSave={onSaveDocument}
+          onSave={handleSave}
           documentContent={documentContent}
           onImport={onImportComplete}
           onDocumentSelect={onDocumentSelect}
         />
-        
-        {isDraft && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-2 text-amber-800 text-sm flex items-center">
-            <span className="font-medium mr-2">DRAFT</span>
-            <span>This document is in draft mode. Click "Finalize Document" when you're ready to publish it.</span>
-          </div>
-        )}
-        
-        <TextEditor 
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleSave}
+            className="flex items-center"
+            variant="outline"
+            size="sm"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+          {(revisions && revisions.length > 0) && (
+            <RevisionHistory
+              revisions={revisions}
+              currentRevision={currentRevision}
+              isViewingRevision={isViewingRevision}
+              onSaveRevision={onSaveRevision}
+              onViewRevision={onViewRevision}
+              onRestoreRevision={onRestoreRevision}
+              onExitRevisionView={onExitRevisionView}
+              onUpdateRevision={onUpdateRevision}
+              onSetAutoSave={onSetAutoSave}
+              autoSaveInterval={autoSaveInterval}
+              documentTitle={documentTitle}
+            />
+          )}
+          {/* Toggle between editor implementations */}
+          <Button
+            onClick={() => setUseModelEditor(!useModelEditor)}
+            variant="outline"
+            size="sm"
+          >
+            {useModelEditor ? 'Use Classic Editor' : 'Use Model Editor'}
+          </Button>
+        </div>
+      </div>
+
+      {useModelEditor ? (
+        <ModelBasedEditor
           initialContent={documentContent}
           onChange={onDocumentContentChange}
-          editorRef={editorRef}
           documentTitle={documentTitle}
-          onSave={onSaveDocument}
           documentId={currentDocument?.id}
           revisions={revisions}
           currentRevision={currentRevision}
@@ -91,14 +128,26 @@ const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           onSetAutoSave={onSetAutoSave}
           autoSaveInterval={autoSaveInterval}
         />
-      </div>
-      
-      <div className="lg:col-span-1">
-        <DocumentOutline 
-          content={documentContent} 
+      ) : (
+        <TextEditor 
+          initialContent={documentContent}
+          onChange={onDocumentContentChange}
           editorRef={editorRef}
+          documentTitle={documentTitle}
+          onSave={handleSave}
+          documentId={currentDocument?.id}
+          revisions={revisions}
+          currentRevision={currentRevision}
+          isViewingRevision={isViewingRevision}
+          onSaveRevision={onSaveRevision}
+          onViewRevision={onViewRevision}
+          onRestoreRevision={onRestoreRevision}
+          onExitRevisionView={onExitRevisionView}
+          onUpdateRevision={onUpdateRevision}
+          onSetAutoSave={onSetAutoSave}
+          autoSaveInterval={autoSaveInterval}
         />
-      </div>
+      )}
     </div>
   );
 };
