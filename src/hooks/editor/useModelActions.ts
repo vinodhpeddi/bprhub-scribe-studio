@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import * as DT from '@/utils/editor/model/documentTypes';
 import { EditorAction } from '@/utils/editor/model/documentSync';
 import { v4 as uuidv4 } from 'uuid';
+import { htmlToModel } from '@/utils/editor/model/htmlToModel';
 
 export function useModelActions(
   syncRef: React.MutableRefObject<import('@/utils/editor/model/documentSync').DocumentSync | null>,
@@ -109,7 +110,8 @@ export function useModelActions(
   const forceHtmlUpdate = useCallback((newHtml: string) => {
     if (!syncRef.current) return;
     
-    const newModel = require('@/utils/editor/model/htmlToModel').htmlToModel(newHtml);
+    // Using proper import instead of require
+    const newModel = htmlToModel(newHtml);
     syncRef.current.updateModel(newModel);
   }, [syncRef]);
   
