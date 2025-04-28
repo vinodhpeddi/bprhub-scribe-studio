@@ -53,7 +53,8 @@ function processNode(node: Node): DT.Node | DT.TextNode | null {
     case 'table':
       return createTableFromElement(element, blockId);
     case 'img':
-      return createImageFromElement(element, blockId);
+      // Fix the issue by explicitly casting to HTMLImageElement 
+      return createImageFromElement(element as HTMLImageElement, blockId);
     case 'blockquote':
       return createBlockquoteFromElement(element, blockId);
     case 'pre':
