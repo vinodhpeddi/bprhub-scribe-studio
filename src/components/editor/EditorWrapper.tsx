@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { UserPresence } from '../collaboration/UserPresence';
+import UserPresence from '../collaboration/UserPresence';
 import ChangeTracking from '../collaboration/ChangeTracking';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorToolbarActions } from './EditorToolbarActions';
@@ -8,6 +7,7 @@ import { CommentControls } from './CommentControls';
 import { Comments } from '../comments/Comments';
 import MergeFieldsDropdown from '../MergeFieldsDropdown';
 import { TableProperties } from '../TableProperties';
+import { CommentDisplayMode } from '@/utils/commentTypes';
 
 interface EditorWrapperProps {
   documentId: string;
@@ -154,13 +154,13 @@ const EditorWrapper: React.FC<EditorWrapperProps> = ({
         </div>
         
         <CommentControls
-          displayMode={displayMode}
+          displayMode={displayMode as CommentDisplayMode}
           setDisplayMode={setDisplayMode}
         />
         
         <Comments
           comments={comments}
-          displayMode={displayMode}
+          displayMode={displayMode as CommentDisplayMode}
           onAddComment={commentActions.addComment}
           onEditComment={commentActions.editComment}
           onDeleteComment={commentActions.deleteComment}

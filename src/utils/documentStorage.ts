@@ -20,7 +20,8 @@ import {
 import {
   lockDocument,
   unlockDocument,
-  isDocumentLocked
+  isDocumentLocked,
+  releaseLock
 } from './storage/documentLockUtils';
 
 export function saveDocument(document: UserDocument): void {
@@ -151,7 +152,7 @@ export function finalizeDraft(document: UserDocument): UserDocument {
 }
 
 // Re-export from documentLockUtils
-export { lockDocument, unlockDocument, isDocumentLocked };
+export { lockDocument, unlockDocument, isDocumentLocked, releaseLock };
 
 // Re-export from documentRevisions
 export {

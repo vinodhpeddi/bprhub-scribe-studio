@@ -30,3 +30,6 @@ export function isDocumentLocked(documentId: string): boolean {
     return false;
   }
 }
+
+// Export releaseLock to fix the missing export
+export { releaseLock };
