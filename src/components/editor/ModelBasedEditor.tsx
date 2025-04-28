@@ -6,6 +6,7 @@ import { useEditorOperations } from '@/hooks/useEditorOperations';
 import { useModelEditorContent } from '@/hooks/editor/useModelEditorContent';
 import { useModelEditorFormatting } from '@/hooks/editor/useModelEditorFormatting';
 import { useModelEditorCollaboration } from '@/hooks/editor/useModelEditorCollaboration';
+import { CommentDisplayMode } from '@/utils/commentTypes';
 
 interface ModelBasedEditorProps {
   initialContent: string;
@@ -131,7 +132,7 @@ const ModelBasedEditor: React.FC<ModelBasedEditorProps> = ({
       selectedTable={selectedTable}
       onCloseTableProperties={closeTableProperties}
       displayMode={displayMode}
-      setDisplayMode={setDisplayMode}
+      setDisplayMode={(mode: CommentDisplayMode) => setDisplayMode(mode)}
       comments={comments}
       commentActions={{
         addComment,
@@ -172,3 +173,4 @@ export default React.memo(ModelBasedEditor);
 import { useState, useEffect } from 'react';
 import { useComments } from '@/hooks/useComments';
 import { useModelEditorOperations } from '@/hooks/editor/useModelEditorOperations';
+
