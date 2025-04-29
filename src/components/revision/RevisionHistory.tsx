@@ -18,6 +18,7 @@ interface RevisionHistoryProps {
   onSetAutoSave: (intervalMinutes: number | null) => void;
   autoSaveInterval: number | null;
   documentTitle: string;
+  documentId: string; // Add documentId prop
 }
 
 export function RevisionHistory(props: RevisionHistoryProps) {

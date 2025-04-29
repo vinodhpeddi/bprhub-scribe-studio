@@ -81,20 +81,20 @@ function renderTextNode(node: DT.TextNode): string {
 function applyMark(content: string, mark: DT.Mark): string {
   switch (mark.type) {
     case 'bold':
-      return `<strong>${content}</strong>`;
+      return `<strong class="text-bold">${content}</strong>`;
     case 'italic':
-      return `<em>${content}</em>`;
+      return `<em class="text-italic">${content}</em>`;
     case 'underline':
-      return `<u>${content}</u>`;
+      return `<u class="text-underline">${content}</u>`;
     case 'strike':
-      return `<s>${content}</s>`;
+      return `<s class="text-strike">${content}</s>`;
     case 'code':
-      return `<code>${content}</code>`;
+      return `<code class="text-code">${content}</code>`;
     case 'link':
       const href = mark.attrs?.href || '';
-      return `<a href="${href}">${content}</a>`;
+      return `<a href="${href}" class="text-link">${content}</a>`;
     case 'highlight':
-      return `<span style="background-color: #FEF7CD;">${content}</span>`;
+      return `<span class="text-highlight" style="background-color: #FEF7CD;">${content}</span>`;
     case 'comment':
       const commentText = mark.attrs?.text || '';
       return `<span class="comment" title="${escapeHtml(commentText)}" style="background-color: #FEF7CD; cursor: help;">${content}</span>`;
@@ -110,35 +110,39 @@ function renderParagraph(node: DT.Node): string {
     let style = '';
     let icon = '';
     let textColor = '';
+    let className = '';
     
     switch (boxType) {
       case 'warning':
         style = 'background-color: #FEF7CD; border: 1px solid #EAB308; border-radius: 4px; padding: 12px; margin: 8px 0;';
         textColor = 'color: #854D0E;';
         icon = '⚠️ Warning:';
+        className = 'box-warning';
         break;
       case 'safety':
         style = 'background-color: #E5DEFF; border: 1px solid #6E59A5; border-radius: 4px; padding: 12px; margin: 8px 0;';
         textColor = 'color: #1A1F2C;';
         icon = '🛡️ Safety Note:';
+        className = 'box-safety';
         break;
       case 'info':
         style = 'background-color: #D3E4FD; border: 1px solid #0EA5E9; border-radius: 4px; padding: 12px; margin: 8px 0;';
         textColor = 'color: #0C4A6E;';
         icon = 'ℹ️ Note:';
+        className = 'box-info';
         break;
     }
     
     const content = node.content ? node.content.map(renderNode).join('') : '';
-    return `<div style="${style}" data-block-id="${node.blockId || ''}">
-      <p style="${textColor} margin: 0;"><strong>${icon}</strong> ${content}</p>
+    return `<div class="${className}" style="${style}" data-block-id="${node.blockId || ''}">
+      <p class="box-content" style="${textColor} margin: 0;"><strong>${icon}</strong> ${content}</p>
     </div>`;
   }
   
   const content = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<p data-block-id="${node.blockId || ''}" ${metadata}>${content}</p>`;
+  return `<p class="editor-paragraph" data-block-id="${node.blockId || ''}" ${metadata}>${content}</p>`;
 }
 
 function renderHeading(node: DT.HeadingNode): string {
@@ -146,44 +150,45 @@ function renderHeading(node: DT.HeadingNode): string {
   const content = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<h${level} data-block-id="${node.blockId || ''}" ${metadata}>${content}</h${level}>`;
+  return `<h${level} class="editor-heading heading-${level}" data-block-id="${node.blockId || ''}" ${metadata}>${content}</h${level}>`;
 }
 
 function renderBulletList(node: DT.ListNode): string {
   const items = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<ul data-block-id="${node.blockId || ''}" ${metadata}>${items}</ul>`;
+  return `<ul class="bullet-list" data-block-id="${node.blockId || ''}" ${metadata}>${items}</ul>`;
 }
 
 function renderOrderedList(node: DT.ListNode): string {
   const items = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<ol data-block-id="${node.blockId || ''}" ${metadata}>${items}</ol>`;
+  return `<ol class="ordered-list" data-block-id="${node.blockId || ''}" ${metadata}>${items}</ol>`;
 }
 
 function renderListItem(node: DT.ListItemNode): string {
   const content = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<li data-block-id="${node.blockId || ''}" ${metadata}>${content}</li>`;
+  return `<li class="list-item" data-block-id="${node.blockId || ''}" ${metadata}>${content}</li>`;
 }
 
 function renderTable(node: DT.TableNode): string {
   const rows = node.content ? node.content.map(renderNode).join('') : '';
-  const isLayout = node.attrs?.layout ? ' class="layout-table"' : '';
+  const isLayout = node.attrs?.layout;
+  const tableClass = isLayout ? 'layout-table table' : 'data-table table';
   const styleAttr = node.attrs?.width ? ` style="border-collapse: collapse; width: ${node.attrs.width};"` : ' style="border-collapse: collapse; width: 100%;"';
   const metadata = renderMetadata(node);
   
-  return `<table${isLayout}${styleAttr} data-block-id="${node.blockId || ''}" ${metadata}>${rows}</table>`;
+  return `<table class="${tableClass}"${styleAttr} data-block-id="${node.blockId || ''}" ${metadata}>${rows}</table>`;
 }
 
 function renderTableRow(node: DT.TableRowNode): string {
   const cells = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<tr data-block-id="${node.blockId || ''}" ${metadata}>${cells}</tr>`;
+  return `<tr class="table-row" data-block-id="${node.blockId || ''}" ${metadata}>${cells}</tr>`;
 }
 
 function renderTableCell(node: DT.TableCellNode): string {
@@ -199,8 +204,9 @@ function renderTableCell(node: DT.TableCellNode): string {
   const style = isLayout 
     ? 'border: none; padding: 8px;' 
     : 'border: 1px solid #ddd; padding: 8px;';
+  const cellClass = isLayout ? 'layout-cell table-cell' : 'data-cell table-cell';
   
-  return `<td style="${style}" data-block-id="${node.blockId || ''}"${rowspan}${colspan} ${metadata}>${content}</td>`;
+  return `<td class="${cellClass}" style="${style}" data-block-id="${node.blockId || ''}"${rowspan}${colspan} ${metadata}>${content}</td>`;
 }
 
 function getParentTable(node: DT.Node): DT.TableNode | null {
@@ -218,27 +224,27 @@ function renderImage(node: DT.ImageNode): string {
   const style = 'max-width: 100%; height: auto; margin: 10px 0;';
   const metadata = renderMetadata(node);
   
-  return `<img src="${src}" alt="${alt}"${title}${width}${height} style="${style}" data-block-id="${node.blockId || ''}" ${metadata}>`;
+  return `<img class="editor-image" src="${src}" alt="${alt}"${title}${width}${height} style="${style}" data-block-id="${node.blockId || ''}" ${metadata}>`;
 }
 
 function renderCodeBlock(node: DT.CodeBlockNode): string {
   const content = node.content ? node.content.map(n => (n as DT.TextNode).text).join('') : '';
   const language = node.attrs?.language || '';
-  const languageClass = language ? ` class="language-${language}"` : '';
+  const languageClass = language ? ` language-${language}` : '';
   const metadata = renderMetadata(node);
   
-  return `<pre data-block-id="${node.blockId || ''}" ${metadata}><code${languageClass}>${escapeHtml(content)}</code></pre>`;
+  return `<pre class="code-block" data-block-id="${node.blockId || ''}" ${metadata}><code class="code-content${languageClass}">${escapeHtml(content)}</code></pre>`;
 }
 
 function renderBlockquote(node: DT.BlockquoteNode): string {
   const content = node.content ? node.content.map(renderNode).join('') : '';
   const metadata = renderMetadata(node);
   
-  return `<blockquote data-block-id="${node.blockId || ''}" ${metadata}>${content}</blockquote>`;
+  return `<blockquote class="editor-blockquote" data-block-id="${node.blockId || ''}" ${metadata}>${content}</blockquote>`;
 }
 
 function renderHorizontalRule(): string {
-  return '<hr>';
+  return '<hr class="editor-hr">';
 }
 
 function renderMetadata(node: DT.Node): string {

@@ -9,6 +9,7 @@ import { Revision } from '@/utils/commentTypes';
 
 interface RevisionDialogContentProps {
   documentTitle: string;
+  documentId: string; // Add documentId prop
   showStorageWarning: boolean;
   revisions: Revision[];
   currentRevision: Revision | null;
@@ -24,6 +25,7 @@ interface RevisionDialogContentProps {
 
 export function RevisionDialogContent({
   documentTitle,
+  documentId, // Include the documentId
   showStorageWarning,
   revisions,
   currentRevision,
@@ -56,6 +58,7 @@ export function RevisionDialogContent({
 
       <div className="flex md:flex-row flex-col gap-4 h-full">
         <RevisionList
+          documentId={documentId} // Pass documentId to RevisionList
           revisions={revisions}
           currentRevision={currentRevision}
           isViewingRevision={isViewingRevision}
