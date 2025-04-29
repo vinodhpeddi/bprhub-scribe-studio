@@ -98,6 +98,7 @@ const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               onSetAutoSave={onSetAutoSave}
               autoSaveInterval={autoSaveInterval}
               documentTitle={documentTitle}
+              documentId={currentDocument?.id || 'temp-doc-id'}
             />
           )}
           {/* Toggle between editor implementations */}

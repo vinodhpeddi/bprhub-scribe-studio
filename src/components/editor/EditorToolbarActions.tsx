@@ -84,6 +84,7 @@ export function EditorToolbarActions({
           onSetAutoSave={onSetAutoSave}
           autoSaveInterval={autoSaveInterval}
           documentTitle={documentTitle}
+          documentId={documentId}
         />
         
         <Button

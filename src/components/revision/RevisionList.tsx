@@ -17,7 +17,7 @@ interface RevisionListProps {
   onUpdateRevision: (revisionId: string, label: string, description?: string) => void;
   onSetAutoSave: (intervalMinutes: number | null) => void;
   autoSaveInterval: number | null;
-  documentId: string; // Add documentId prop
+  documentId: string;
 }
 
 export function RevisionList({
@@ -30,7 +30,7 @@ export function RevisionList({
   onUpdateRevision,
   onSetAutoSave,
   autoSaveInterval,
-  documentId // Include the documentId
+  documentId
 }: RevisionListProps) {
   const sortedRevisions = [...revisions].sort((a, b) => 
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -39,6 +39,7 @@ export function RevisionList({
   return (
     <Card className="md:w-1/2 p-4 flex flex-col h-[400px]">
       <RevisionListHeader 
+        revisions={revisions}
         isViewingRevision={isViewingRevision}
         onExitRevisionView={onExitRevisionView}
         autoSaveInterval={autoSaveInterval}

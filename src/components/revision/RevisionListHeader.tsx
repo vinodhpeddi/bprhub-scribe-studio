@@ -9,12 +9,16 @@ interface RevisionListHeaderProps {
   revisions: Revision[];
   autoSaveInterval: number | null;
   onSetAutoSave: (intervalMinutes: number | null) => void;
+  isViewingRevision: boolean;
+  onExitRevisionView: () => void;
 }
 
 export const RevisionListHeader: React.FC<RevisionListHeaderProps> = ({ 
   revisions, 
   autoSaveInterval, 
-  onSetAutoSave 
+  onSetAutoSave,
+  isViewingRevision,
+  onExitRevisionView
 }) => {
   const [isAutoSaveDialogOpen, setIsAutoSaveDialogOpen] = React.useState(false);
 
@@ -36,6 +40,15 @@ export const RevisionListHeader: React.FC<RevisionListHeaderProps> = ({
         </div>
       </div>
       <div className="flex items-center space-x-2">
+        {isViewingRevision && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onExitRevisionView}
+          >
+            Exit Revision View
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
