@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { ExportOptions, defaultExportOptions, exportDocument, validateDocument } from '@/utils/editorUtils';
+import { ExportOptions, defaultExportOptions } from '@/utils/documentTypes';
+import { exportDocument } from '@/utils/documentExport';
+import { validateDocument } from '@/utils/documentAnalysis';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,7 +37,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
       await exportDocument(documentContent, options, documentTitle);
       toast.success(`Document exported as ${options.format.toUpperCase()}`);
       if (options.format === 'word') {
-        toast.info("For best formatting results, you may want to use the 'Export as HTML' option and convert to DOCX using an online converter.");
+        toast.info("For best formatting results, you may want to review the document after export.");
       }
       onClose();
     } catch (error) {
@@ -49,9 +52,9 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Export Document</DialogTitle>
+          <DialogTitle>Advanced Export Options</DialogTitle>
           <DialogDescription>
-            Choose your export options
+            Configure detailed export settings
           </DialogDescription>
         </DialogHeader>
         

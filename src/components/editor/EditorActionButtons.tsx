@@ -1,8 +1,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Copy, Save, FileUp, List } from 'lucide-react';
-import ExportModal from '../ExportModal';
+import { Copy, Save, FileUp, List } from 'lucide-react';
+import { ExportTools } from '../toolbar/ExportTools';
 import ImportModal from '../ImportModal';
 import DocumentListModal from '../DocumentListModal';
 import { toast } from 'sonner';
@@ -23,7 +23,6 @@ const EditorActionButtons: React.FC<EditorActionButtonsProps> = ({
   onImport,
   onDocumentSelect,
 }) => {
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDocListModalOpen, setIsDocListModalOpen] = useState(false);
 
@@ -85,15 +84,10 @@ const EditorActionButtons: React.FC<EditorActionButtonsProps> = ({
         <span className="hidden sm:inline">Copy Text</span>
       </Button>
       
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="whitespace-nowrap"
-        onClick={() => setIsExportModalOpen(true)}
-      >
-        <Download className="h-4 w-4 mr-1" />
-        <span className="hidden sm:inline">Export</span>
-      </Button>
+      <ExportTools 
+        documentContent={documentContent} 
+        documentTitle={documentTitle} 
+      />
       
       <Button 
         variant="default" 
@@ -105,13 +99,6 @@ const EditorActionButtons: React.FC<EditorActionButtonsProps> = ({
         <span className="hidden sm:inline">Save</span>
       </Button>
 
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        documentContent={documentContent}
-        documentTitle={documentTitle}
-      />
-      
       <ImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
