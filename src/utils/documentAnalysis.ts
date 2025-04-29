@@ -62,7 +62,7 @@ export function validateDocument(title: string, content: string): { isValid: boo
     errors.push('Document title cannot be empty');
   }
   
-  // Basic content validation
+  // Enhanced content validation
   if (!content || content.trim() === '') {
     errors.push('Document content cannot be empty');
   } else {
@@ -70,6 +70,13 @@ export function validateDocument(title: string, content: string): { isValid: boo
     const strippedContent = content.replace(/<[^>]*>/g, '').trim();
     if (strippedContent === '') {
       errors.push('Document contains no visible text content');
+    }
+    
+    if (strippedContent.length < 10) {
+      console.warn('Document content is very short, might be insufficient for export', {
+        contentLength: content.length,
+        strippedContent: strippedContent
+      });
     }
     
     // Parse with DOM parser to check if content is valid HTML

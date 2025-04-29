@@ -19,13 +19,13 @@ import { Button } from '@/components/ui/button';
 interface ExportToolsProps {
   documentContent: string;
   documentTitle: string;
-  disabled?: boolean; // Add disabled prop
+  disabled?: boolean;
 }
 
 export const ExportTools: React.FC<ExportToolsProps> = ({ 
   documentContent, 
   documentTitle,
-  disabled = false // Default to enabled
+  disabled = false
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [activeExport, setActiveExport] = useState<'pdf' | 'word' | 'html' | null>(null);
@@ -34,8 +34,13 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
     if (isExporting) return;
     
     // Check that we actually have content to export
-    if (!documentContent || documentContent.trim() === '') {
+    const strippedContent = documentContent.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent || strippedContent === '') {
       toast.error("Document appears to be empty. Please add some content before exporting.");
+      console.log("Export failed: Document content appears empty", {
+        contentLength: documentContent.length,
+        strippedContent: strippedContent.length
+      });
       return;
     }
     
@@ -53,7 +58,7 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
         }
       }
       
-      console.log(`Exporting document, content length: ${documentContent.length}, format: ${format}`);
+      console.log(`Exporting document, content length: ${documentContent.length}, stripped content: ${strippedContent.length}, format: ${format}`);
       
       const options = {
         ...defaultExportOptions,
@@ -78,13 +83,13 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
 
   return (
     <div className="flex items-center gap-2">
-      {/* PDF Export Button */}
+      {/* PDF Export Button - Make it more visible and prominent */}
       <Button
         variant="outline"
         size="sm"
         onClick={() => handleExport('pdf')}
         disabled={isExporting || disabled}
-        className="flex items-center"
+        className="flex items-center bg-white hover:bg-gray-100"
       >
         {isExporting && activeExport === 'pdf' ? (
           <Loader2 size={16} className="mr-1 animate-spin" />
@@ -94,13 +99,13 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
         PDF
       </Button>
 
-      {/* DOCX Export Button */}
+      {/* DOCX Export Button - Make it more visible and prominent */}
       <Button
         variant="outline"
         size="sm"
         onClick={() => handleExport('word')}
         disabled={isExporting || disabled}
-        className="flex items-center"
+        className="flex items-center bg-white hover:bg-gray-100"
       >
         {isExporting && activeExport === 'word' ? (
           <Loader2 size={16} className="mr-1 animate-spin" />

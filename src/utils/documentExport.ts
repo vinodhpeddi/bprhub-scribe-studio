@@ -13,12 +13,12 @@ initPdfWorker();
 
 export async function exportDocument(content: string, options: ExportOptions, title: string = "Document"): Promise<void> {
   try {
-    // Ensure we have content to export
+    // Enhanced content validation: Check for non-empty content
     if (!content || content.trim() === '') {
       throw new Error('Cannot export document: Document content is empty');
     }
     
-    // Check if the content is just empty HTML tags
+    // Check if the content is just empty HTML tags by stripping all HTML and checking what remains
     const strippedContent = content.replace(/<[^>]*>/g, '').trim();
     if (strippedContent === '') {
       throw new Error('Cannot export document: Document appears to contain only HTML tags with no text content');
