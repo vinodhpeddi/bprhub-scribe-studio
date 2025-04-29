@@ -33,6 +33,12 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
   const handleExport = async (format: 'pdf' | 'word' | 'html') => {
     if (isExporting) return;
     
+    // Check that we actually have content to export
+    if (!documentContent || documentContent.trim() === '') {
+      toast.error("Document appears to be empty. Please add some content before exporting.");
+      return;
+    }
+    
     setIsExporting(true);
     setActiveExport(format);
     try {
@@ -47,10 +53,7 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
         }
       }
       
-      // Check that we actually have content to export
-      if (!documentContent || documentContent.trim() === '') {
-        toast.warning("Document appears to be empty. Your export may not contain content.");
-      }
+      console.log(`Exporting document, content length: ${documentContent.length}, format: ${format}`);
       
       const options = {
         ...defaultExportOptions,

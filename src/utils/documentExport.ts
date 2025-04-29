@@ -1,3 +1,4 @@
+
 import { saveAs } from 'file-saver';
 import { ExportOptions } from './documentTypes';
 import { validateDocument } from './documentAnalysis';
@@ -12,6 +13,19 @@ initPdfWorker();
 
 export async function exportDocument(content: string, options: ExportOptions, title: string = "Document"): Promise<void> {
   try {
+    // Ensure we have content to export
+    if (!content || content.trim() === '') {
+      throw new Error('Cannot export document: Document content is empty');
+    }
+    
+    // Check if the content is just empty HTML tags
+    const strippedContent = content.replace(/<[^>]*>/g, '').trim();
+    if (strippedContent === '') {
+      throw new Error('Cannot export document: Document appears to contain only HTML tags with no text content');
+    }
+    
+    console.log(`Processing document export. Content length: ${content.length}, stripped content length: ${strippedContent.length}`);
+    
     // Replace merge fields with sample values before export
     const processedContent = replaceMergeFields(content);
     
@@ -54,7 +68,7 @@ export async function exportDocument(content: string, options: ExportOptions, ti
     }
     
     saveAs(blob, filename);
-    console.log(`Exporting document as ${options.format}`, { content, options, title });
+    console.log(`Document export successful: ${filename}`);
   } catch (error) {
     console.error('Error exporting document:', error);
     throw error;

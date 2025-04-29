@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -23,9 +23,22 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
   const [options, setOptions] = useState<ExportOptions>(defaultExportOptions);
   const [isExporting, setIsExporting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  
+  // Run validation on mount and when content changes
+  useEffect(() => {
+    if (isOpen) {
+      const validation = validateDocument(documentTitle, documentContent);
+      setValidationErrors(validation.isValid ? [] : validation.errors);
+    }
+  }, [isOpen, documentContent, documentTitle]);
 
   const handleExport = async () => {
     try {
+      if (!documentContent || documentContent.trim() === '') {
+        setValidationErrors(['Document content is empty']);
+        return;
+      }
+      
       const validation = validateDocument(documentTitle, documentContent);
       if (!validation.isValid) {
         setValidationErrors(validation.errors);
@@ -34,6 +47,9 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
 
       setValidationErrors([]);
       setIsExporting(true);
+      
+      console.log(`Exporting document from modal, content length: ${documentContent.length}`);
+      
       await exportDocument(documentContent, options, documentTitle);
       toast.success(`Document exported as ${options.format.toUpperCase()}`);
       if (options.format === 'word') {
@@ -43,6 +59,10 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export document. Try exporting as HTML first.');
+      
+      if (error instanceof Error) {
+        setValidationErrors([error.message]);
+      }
     } finally {
       setIsExporting(false);
     }
@@ -150,7 +170,10 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, documentCont
         
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isExporting}>Cancel</Button>
-          <Button onClick={handleExport} disabled={isExporting}>
+          <Button 
+            onClick={handleExport} 
+            disabled={isExporting || validationErrors.length > 0}
+          >
             {isExporting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

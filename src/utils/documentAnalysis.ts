@@ -1,3 +1,4 @@
+
 export function parseDocumentOutline(content: string): { id: string; level: number; text: string }[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'text/html');
@@ -61,9 +62,29 @@ export function validateDocument(title: string, content: string): { isValid: boo
     errors.push('Document title cannot be empty');
   }
   
-  // Validate content
+  // Basic content validation
   if (!content || content.trim() === '') {
     errors.push('Document content cannot be empty');
+  } else {
+    // Check if there's actual text content, not just HTML tags
+    const strippedContent = content.replace(/<[^>]*>/g, '').trim();
+    if (strippedContent === '') {
+      errors.push('Document contains no visible text content');
+    }
+    
+    // Parse with DOM parser to check if content is valid HTML
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      
+      // Check if parsing resulted in errors
+      const parseErrors = doc.getElementsByTagName('parsererror');
+      if (parseErrors.length > 0) {
+        errors.push('Document contains invalid HTML');
+      }
+    } catch (e) {
+      errors.push('Failed to parse document content');
+    }
   }
   
   return {
